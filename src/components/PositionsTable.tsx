@@ -203,10 +203,13 @@ export function PositionsTable({ positions, arsToUsdRate, currency }: PositionsT
   return (
     <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
       <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
-        <div>
+        <div className="flex justify-between w-full">
           <h3 className="text-sm font-semibold uppercase tracking-widest text-slate-500">
             Resumen de Posiciones
           </h3>
+          <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+            posiciones abiertas: {positions.length}
+          </span>
         </div>
       </div>
       <div>

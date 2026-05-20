@@ -54,7 +54,7 @@ export function KPICardsGrid({
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
       <KPICard
         title="Total Invertido"
         value={<AnimatedCurrency value={totalInvested} currency={globalCurrency} />}
@@ -72,7 +72,6 @@ export function KPICardsGrid({
           totalPnlAbsolute >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
         }
       />
-      <KPICard title="Posiciones Abiertas" value={positions.length.toString()} />
       <KPICard
         title="Mejor Activo"
         value={bestAsset ? (isPrivate ? '***' : bestAsset.ticker) : '-'}

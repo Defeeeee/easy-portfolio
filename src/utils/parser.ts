@@ -6,7 +6,6 @@ export function parseOrderDate(dateVal: string): Date {
 
   const dateStr = String(dateVal).trim();
 
-  // Try parsing standard formats (YYYY-MM-DD)
   const d = new Date(dateStr);
   if (!isNaN(d.getTime())) return d;
 
@@ -16,7 +15,6 @@ export function parseOrderDate(dateVal: string): Date {
 function parseNumber(value: number | string): number {
   if (typeof value === 'number') return value;
   if (!value) return 0;
-  // Handle comma as decimal separator if it's a string
   const stringVal = String(value).replace(/\./g, '').replace(/,/g, '.');
   return parseFloat(stringVal) || 0;
 }
@@ -32,13 +30,10 @@ export async function parseBalanz(file: File): Promise<RawOrder[]> {
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
 
-        // Convert to JSON, assuming the first row is the header
         const rawData = XLSX.utils.sheet_to_json<any>(sheet, { defval: '' });
 
-        // Normalize the data
         const orders: RawOrder[] = rawData
           .map((row) => {
-            // Find keys that might have leading/trailing spaces
             const getVal = (keyStr: string) => {
               const key = Object.keys(row).find((k) => k.trim() === keyStr);
               return key ? row[key] : '';
@@ -110,23 +105,19 @@ export async function parseCocos(file: File): Promise<RawOrder[]> {
         const text = e.target?.result as string;
         if (!text) return resolve([]);
 
-        // Split by newline and remove empty lines
         const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0);
-        if (lines.length < 2) return resolve([]); // Header only or empty
+        if (lines.length < 2) return resolve([]);
 
         const orders: RawOrder[] = [];
 
-        // Parse lines, skip header (i=0)
         for (let i = 1; i < lines.length; i++) {
           const line = lines[i].trim();
           if (!line) continue;
 
           const cols = line.split(';');
-          // A valid line must have at least 10 columns (up to cantidad/precio/total)
           if (cols.length < 10) continue;
 
           const instrumento = cols[5]?.trim() || '';
-          // Skip if there is no instrument or it is the header text
           if (!instrumento || instrumento.toLowerCase() === 'instrumento') continue;
 
           const rawCantidad = parseNumber(cols[8]);
@@ -139,7 +130,6 @@ export async function parseCocos(file: File): Promise<RawOrder[]> {
           const iva = cols[13] ? Math.abs(parseNumber(cols[13])) : 0;
           const otros = cols[14] ? Math.abs(parseNumber(cols[14])) : 0;
 
-          // Determine transaction Type (COMPRA or VENTA)
           const tipoOperacion = cols[4]?.trim() || '';
           let tipo = 'COMPRA';
           const tipoOpLower = tipoOperacion.toLowerCase();
@@ -158,10 +148,8 @@ export async function parseCocos(file: File): Promise<RawOrder[]> {
 
           if (cantidad <= 0) continue;
 
-          // Extracted Ticker
           const ticker = extractCocosTicker(instrumento);
 
-          // Map currency
           const monedaRaw = cols[6]?.trim().toUpperCase() || '';
           const moneda =
             monedaRaw === 'USD' ||
@@ -171,7 +159,6 @@ export async function parseCocos(file: File): Promise<RawOrder[]> {
               ? 'Dólar'
               : 'Pesos';
 
-          // Standardize dates
           const concertacion = parseCocosDate(cols[2]);
           const liquidacion = parseCocosDate(cols[3]);
 
@@ -199,6 +186,6 @@ export async function parseCocos(file: File): Promise<RawOrder[]> {
     };
 
     reader.onerror = (error) => reject(error);
-    reader.readAsText(file); // Cocos provides standard CSVs
+    reader.readAsText(file);
   });
 }

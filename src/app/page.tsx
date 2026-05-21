@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { UploadView, BrokerType } from '@/components/UploadView';
+import { UploadView } from '@/components/UploadView';
+import { BrokerType } from '@/constants/brokers';
 import { Dashboard } from '@/components/Dashboard';
 import { parseBalanz, parseBullMarket, parseCocos } from '@/utils/parser';
 import { calculatePositions } from '@/utils/calculator';

@@ -104,10 +104,10 @@ export function UploadView({
       setDragActive(false);
       if (e.dataTransfer.files && e.dataTransfer.files[0]) {
         const file = e.dataTransfer.files[0];
-        if (file.name.endsWith('.xlsx')) {
+        if (file.name.endsWith('.xlsx') || file.name.endsWith('.csv')) {
           onFileSelect(file, selectedBroker);
         } else {
-          onError('Por favor sube un archivo .xlsx válido.');
+          onError('Por favor sube un archivo .xlsx o .csv válido.');
         }
       }
     },
@@ -117,10 +117,10 @@ export function UploadView({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      if (file.name.endsWith('.xlsx')) {
+      if (file.name.endsWith('.xlsx') || file.name.endsWith('.csv')) {
         onFileSelect(file, selectedBroker);
       } else {
-        onError('Por favor sube un archivo .xlsx válido.');
+        onError('Por favor sube un archivo .xlsx o .csv válido.');
       }
     }
   };
@@ -167,7 +167,7 @@ export function UploadView({
               renderText={BROKERS[selectedBroker].renderText}
             />
           </h1>
-          <p className="text-sm text-slate-500 mt-2">De una manera más simple</p>
+          <p className="text-md text-slate-500 mt-2">De una manera más simple</p>
         </div>
 
         <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-100 p-8 flex flex-col gap-7">
@@ -178,7 +178,7 @@ export function UploadView({
               </div>
               <p className="text-sm font-semibold text-red-700 mb-2">{error}</p>
               <p className="text-xs text-red-500 font-medium">
-                Serás redirigido en {countdown} segundos...
+                Podrás volver a intentarlo en {countdown} segundos...
               </p>
             </div>
           ) : isLoading ? (
@@ -202,7 +202,7 @@ export function UploadView({
             >
               <input
                 type="file"
-                accept=".xlsx"
+                accept=".xlsx,.csv"
                 onChange={handleChange}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
@@ -216,7 +216,7 @@ export function UploadView({
                     Arrastrá o hacé clic para subir
                   </p>
                   <p className="text-xs text-slate-400 mt-1">
-                    Archivo .xlsx · Historial de operaciones · Dólar MEP automático
+                    Archivo .xlsx o .csv de tu historial de operaciones
                   </p>
                 </div>
               </div>

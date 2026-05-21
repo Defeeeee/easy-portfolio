@@ -9,6 +9,7 @@ import { NavBar } from '@/components/NavBar';
 import { EvolutionChart } from '@/components/charts/EvolutionChart';
 import { PrivacyProvider } from '@/context/PrivacyContext';
 import { KPICardsGrid } from '@/components/KPICardsGrid';
+import { Database } from 'lucide-react';
 
 interface DashboardProps {
   positions: Position[];
@@ -35,6 +36,29 @@ export function Dashboard({ positions, orders, arsToUsdRate, onReset }: Dashboar
   const totalPnlAbsolute = (currentTotalValueUSD - totalInvestedUSD) * currencyMultiplier;
   const totalPnlPercentage =
     totalInvestedUSD > 0 ? ((currentTotalValueUSD - totalInvestedUSD) / totalInvestedUSD) * 100 : 0;
+
+  if (positions.length === 0) {
+    return (
+      <PrivacyProvider>
+        <div className="max-w-screen-2xl mx-auto px-4 md:px-8 py-8 space-y-8">
+          <NavBar
+            arsToUsdRate={arsToUsdRate}
+            onReset={onReset}
+            currency={globalCurrency}
+            onCurrencyChange={setGlobalCurrency}
+          />
+
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <Database size={48} className="text-slate-300 stroke-[1.5] mb-5" />
+            <p className="text-base text-slate-500 font-medium tracking-tight max-w-lg leading-relaxed">
+              El reporte del broker seleccionado no registra operaciones válidas de compra o venta
+              de activos
+            </p>
+          </div>
+        </div>
+      </PrivacyProvider>
+    );
+  }
 
   return (
     <PrivacyProvider>

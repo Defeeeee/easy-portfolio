@@ -1,4 +1,4 @@
-export type BrokerType = 'balanz' | 'cocos' | 'bullmarket';
+export type BrokerType = 'balanz' | 'cocos' | 'bullmarket' | 'binance';
 
 export interface BrokerConfig {
   id: BrokerType;
@@ -40,6 +40,13 @@ export const BROKERS: Record<BrokerType, BrokerConfig> = {
     name: 'Bull Market',
     textColorClass: 'text-[#1d28f2]',
     logoUrl: '/bullmarket-logo.png',
+    fontFamily: 'Montserrat, sans-serif',
+  },
+  binance: {
+    id: 'binance',
+    name: 'Binance',
+    textColorClass: 'text-[#f2ba2c]',
+    logoUrl: '/binance-logo.png',
     fontFamily: 'Montserrat, sans-serif',
   },
 };

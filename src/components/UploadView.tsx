@@ -168,10 +168,10 @@ export function UploadView({
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-slate-700">
-                    Arrastrá o hacé clic para subir
+                    Arrastrá o hacé clic para subir tu historial de operaciones
                   </p>
                   <p className="text-xs text-slate-400 mt-1">
-                    Archivo .xlsx o .csv de tu historial de operaciones
+                    Los archivos pueden ser .xlsx o .csv dependiendo del broker
                   </p>
                 </div>
               </div>
@@ -182,8 +182,9 @@ export function UploadView({
         <p className="mt-6 text-center text-[8px] leading-relaxed text-slate-400 font-normal max-w-md">
           Esta aplicación es una herramienta independiente de visualización de datos y no se
           encuentra afiliada, asociada, respaldada ni vinculada formalmente con Balanz Capital S.A.,
-          Cocos Capital S.A., Bull Market Brokers S.A., ni con ninguna de sus entidades. Los nombres
-          y marcas comerciales mencionadas pertenecen a sus respectivos titulares.
+          Cocos Capital S.A., Bull Market Brokers S.A., Binance Services Lationamérica S.A. ni con
+          ninguna de sus entidades. Los nombres y marcas comerciales mencionadas pertenecen a sus
+          respectivos titulares.
         </p>
       </div>
 

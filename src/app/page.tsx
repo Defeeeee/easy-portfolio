@@ -26,9 +26,6 @@ export default function Home() {
         case 'cocos':
           parsePromise = parseCocos(file);
           break;
-        case 'bullmarket':
-          parsePromise = parseBullMarket(file);
-          break;
         case 'balanz':
         default:
           parsePromise = parseBalanz(file);

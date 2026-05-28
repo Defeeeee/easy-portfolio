@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Position } from '@/types';
-import { CustomTooltip } from '@/components/charts/CustomTooltip';
+import { CustomTooltip } from '@/components/dashboard/charts/CustomTooltip';
 import { COLORS } from '@/constants/colors';
 
 interface PortfolioDistributionProps {

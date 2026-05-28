@@ -2,8 +2,7 @@
 
 import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import { Upload, Loader2, AlertCircle } from 'lucide-react';
-import { Typewriter } from './animations/TypeWriter';
-import Image from 'next/image';
+import { Typewriter } from '@/components/ui/animations/TypeWriter';
 import { BROKERS, type BrokerType } from '@/constants/brokers';
 
 interface UploadViewProps {

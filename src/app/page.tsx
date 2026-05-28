@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { UploadView } from '@/components/UploadView';
+import { UploadView } from '@/components/upload/UploadView';
 import { BrokerType } from '@/constants/brokers';
-import { Dashboard } from '@/components/Dashboard';
-import { parseBalanz, parseBullMarket, parseCocos } from '@/utils/parser';
+import { Dashboard } from '@/components/dashboard/Dashboard';
+import { parseBalanz, parseCocos } from '@/utils/parser';
 import { calculatePositions } from '@/utils/calculator';
 import { Position, RawOrder } from '@/types';
 import { fetchDolarRate, fetchCurrentPrices } from '@/utils/api';

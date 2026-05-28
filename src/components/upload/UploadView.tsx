@@ -189,12 +189,6 @@ export function UploadView({
 
       {/* Footer Broker Selection */}
       <BrokerSelection selectedBroker={selectedBroker} onSelectBroker={setSelectedBroker} />
-
-      <TutorialModal 
-        isOpen={isTutorialOpen} 
-        onClose={() => setIsTutorialOpen(false)} 
-        brokerId={selectedBroker} 
-      />
     </div>
   );
 }

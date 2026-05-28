@@ -4,6 +4,7 @@ import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import { Upload, Loader2, AlertCircle } from 'lucide-react';
 import { Typewriter } from '@/components/ui/animations/TypeWriter';
 import { BROKERS, type BrokerType } from '@/constants/brokers';
+import { BrokerSelection } from '@/components/upload/BrokerSelection';
 
 interface UploadViewProps {
   onFileSelect: (file: File, broker: BrokerType) => void;
@@ -180,49 +181,20 @@ export function UploadView({
 
         <p className="mt-6 text-center text-[8px] leading-relaxed text-slate-400 font-normal max-w-md">
           Esta aplicación es una herramienta independiente de visualización de datos y no se
-          encuentra afiliada, asociada, respaldada ni vinculada formalmente con Balanz Capital S.A.,
-          Cocos Capital S.A., Bull Market Brokers S.A., Binance Services Lationamérica S.A. ni con
-          ninguna de sus entidades. Los nombres y marcas comerciales mencionadas pertenecen a sus
-          respectivos titulares.
+          encuentra afiliada, asociada, respaldada ni vinculada formalmente con Balanz Capital S.A.
+          o Cocos Capital S.A. ni con ninguna de sus entidades. Los nombres y marcas comerciales
+          mencionadas pertenecen a sus respectivos titulares.
         </p>
       </div>
 
       {/* Footer Broker Selection */}
-      <div className="w-full max-w-xl flex flex-col items-center gap-4 pt-8">
-        <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">
-          Seleccioná tu broker
-        </p>
-        <div className="flex flex-wrap justify-center items-center gap-5">
-          {(Object.keys(BROKERS) as BrokerType[]).map((brokerId) => {
-            const broker = BROKERS[brokerId];
-            const isSelected = selectedBroker === broker.id;
-            return (
-              <button
-                key={broker.id}
-                onClick={() => setSelectedBroker(broker.id)}
-                title={broker.name}
-                className={`cursor-pointer relative flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl transition-all duration-300 overflow-hidden`}
-              >
-                <div
-                  className={`flex items-center justify-center w-full h-full transition-all duration-300 ${
-                    isSelected
-                      ? 'grayscale-0 opacity-100'
-                      : 'grayscale opacity-40 hover:grayscale-0 hover:opacity-100'
-                  }`}
-                >
-                  <Image
-                    src={broker.logoUrl}
-                    alt={broker.name}
-                    width={80}
-                    height={80}
-                    className="w-full h-full object-contain p-2"
-                  />
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <BrokerSelection selectedBroker={selectedBroker} onSelectBroker={setSelectedBroker} />
+
+      <TutorialModal 
+        isOpen={isTutorialOpen} 
+        onClose={() => setIsTutorialOpen(false)} 
+        brokerId={selectedBroker} 
+      />
     </div>
   );
 }

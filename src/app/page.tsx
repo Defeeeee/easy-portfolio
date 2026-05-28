@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { UploadView, BrokerType } from '@/components/UploadView';
-import { Dashboard } from '@/components/Dashboard';
-import { parseBalanz, parseBullMarket, parseCocos } from '@/utils/parser';
+import { UploadView } from '@/components/upload/UploadView';
+import { BrokerType } from '@/constants/brokers';
+import { Dashboard } from '@/components/dashboard/Dashboard';
+import { parseBalanz, parseCocos } from '@/utils/parser';
 import { calculatePositions } from '@/utils/calculator';
 import { Position, RawOrder } from '@/types';
 import { fetchDolarRate, fetchCurrentPrices } from '@/utils/api';
@@ -24,9 +25,6 @@ export default function Home() {
       switch (broker) {
         case 'cocos':
           parsePromise = parseCocos(file);
-          break;
-        case 'bullmarket':
-          parsePromise = parseBullMarket(file);
           break;
         case 'balanz':
         default:

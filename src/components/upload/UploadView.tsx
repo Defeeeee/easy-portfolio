@@ -2,54 +2,9 @@
 
 import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import { Upload, Loader2, AlertCircle } from 'lucide-react';
-import { Typewriter } from './animations/TypeWriter';
-import Image from 'next/image';
-
-export type BrokerType = 'balanz' | 'cocos' | 'bullmarket';
-
-interface BrokerConfig {
-  id: BrokerType;
-  name: string;
-  textColorClass: string;
-  logoUrl: string;
-  fontFamily?: string;
-  renderText?: (text: string) => React.ReactNode;
-}
-
-const BROKERS: Record<BrokerType, BrokerConfig> = {
-  balanz: {
-    id: 'balanz',
-    name: 'BALANZ',
-    textColorClass: 'text-[#192572]',
-    logoUrl: '/balanz-logo.png',
-  },
-  cocos: {
-    id: 'cocos',
-    name: 'Cocos Capital',
-    textColorClass: 'text-[#0062e1] font-extrabold',
-    logoUrl: '/cocos-logo.png',
-    fontFamily: 'Fonarto, sans-serif',
-    renderText: (text: string) => {
-      const parts = text.split(' ');
-      if (parts.length === 1) {
-        return <span style={{ color: '#002c65' }}>{parts[0]}</span>;
-      }
-      return (
-        <>
-          <span style={{ color: '#002c65' }}>{parts[0]}</span>{' '}
-          <span style={{ color: '#0062e1' }}>{parts.slice(1).join(' ')}</span>
-        </>
-      );
-    },
-  },
-  bullmarket: {
-    id: 'bullmarket',
-    name: 'Bull Market',
-    textColorClass: 'text-[#1d28f2]',
-    logoUrl: '/bullmarket-logo.png',
-    fontFamily: 'Montserrat, sans-serif',
-  },
-};
+import { Typewriter } from '@/components/ui/animations/TypeWriter';
+import { BROKERS, type BrokerType } from '@/constants/brokers';
+import { BrokerSelection } from '@/components/upload/BrokerSelection';
 
 interface UploadViewProps {
   onFileSelect: (file: File, broker: BrokerType) => void;
@@ -104,10 +59,10 @@ export function UploadView({
       setDragActive(false);
       if (e.dataTransfer.files && e.dataTransfer.files[0]) {
         const file = e.dataTransfer.files[0];
-        if (file.name.endsWith('.xlsx')) {
+        if (file.name.endsWith('.xlsx') || file.name.endsWith('.csv')) {
           onFileSelect(file, selectedBroker);
         } else {
-          onError('Por favor sube un archivo .xlsx válido.');
+          onError('Por favor sube un archivo .xlsx o .csv válido.');
         }
       }
     },
@@ -117,10 +72,10 @@ export function UploadView({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      if (file.name.endsWith('.xlsx')) {
+      if (file.name.endsWith('.xlsx') || file.name.endsWith('.csv')) {
         onFileSelect(file, selectedBroker);
       } else {
-        onError('Por favor sube un archivo .xlsx válido.');
+        onError('Por favor sube un archivo .xlsx o .csv válido.');
       }
     }
   };
@@ -167,7 +122,7 @@ export function UploadView({
               renderText={BROKERS[selectedBroker].renderText}
             />
           </h1>
-          <p className="text-sm text-slate-500 mt-2">De una manera más simple</p>
+          <p className="text-md text-slate-500 mt-2">De una manera más simple</p>
         </div>
 
         <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-100 p-8 flex flex-col gap-7">
@@ -178,7 +133,7 @@ export function UploadView({
               </div>
               <p className="text-sm font-semibold text-red-700 mb-2">{error}</p>
               <p className="text-xs text-red-500 font-medium">
-                Serás redirigido en {countdown} segundos...
+                Podrás volver a intentarlo en {countdown} segundos...
               </p>
             </div>
           ) : isLoading ? (
@@ -202,7 +157,7 @@ export function UploadView({
             >
               <input
                 type="file"
-                accept=".xlsx"
+                accept=".xlsx,.csv"
                 onChange={handleChange}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
@@ -213,10 +168,10 @@ export function UploadView({
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-slate-700">
-                    Arrastrá o hacé clic para subir
+                    Arrastrá o hacé clic para subir tu historial de operaciones
                   </p>
                   <p className="text-xs text-slate-400 mt-1">
-                    Archivo .xlsx · Historial de operaciones · Dólar MEP automático
+                    Los archivos pueden ser .xlsx o .csv dependiendo del broker
                   </p>
                 </div>
               </div>
@@ -226,48 +181,14 @@ export function UploadView({
 
         <p className="mt-6 text-center text-[8px] leading-relaxed text-slate-400 font-normal max-w-md">
           Esta aplicación es una herramienta independiente de visualización de datos y no se
-          encuentra afiliada, asociada, respaldada ni vinculada formalmente con Balanz Capital S.A.,
-          Cocos Capital S.A., Bull Market Brokers S.A., ni con ninguna de sus entidades. Los nombres
-          y marcas comerciales mencionadas pertenecen a sus respectivos titulares.
+          encuentra afiliada, asociada, respaldada ni vinculada formalmente con Balanz Capital S.A.
+          o Cocos Capital S.A. ni con ninguna de sus entidades. Los nombres y marcas comerciales
+          mencionadas pertenecen a sus respectivos titulares.
         </p>
       </div>
 
       {/* Footer Broker Selection */}
-      <div className="w-full max-w-xl flex flex-col items-center gap-4 pt-8">
-        <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">
-          Seleccioná tu broker
-        </p>
-        <div className="flex flex-wrap justify-center items-center gap-5">
-          {(Object.keys(BROKERS) as BrokerType[]).map((brokerId) => {
-            const broker = BROKERS[brokerId];
-            const isSelected = selectedBroker === broker.id;
-            return (
-              <button
-                key={broker.id}
-                onClick={() => setSelectedBroker(broker.id)}
-                title={broker.name}
-                className={`cursor-pointer relative flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl transition-all duration-300 overflow-hidden`}
-              >
-                <div
-                  className={`flex items-center justify-center w-full h-full transition-all duration-300 ${
-                    isSelected
-                      ? 'grayscale-0 opacity-100'
-                      : 'grayscale opacity-40 hover:grayscale-0 hover:opacity-100'
-                  }`}
-                >
-                  <Image
-                    src={broker.logoUrl}
-                    alt={broker.name}
-                    width={80}
-                    height={80}
-                    className="w-full h-full object-contain p-2"
-                  />
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <BrokerSelection selectedBroker={selectedBroker} onSelectBroker={setSelectedBroker} />
     </div>
   );
 }

@@ -5,11 +5,11 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.x-38bdf8?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
 [![License](https://img.shields.io/badge/License-MIT-emerald?style=flat-square)](LICENSE)
 
-Una herramienta web **independiente, local y de código abierto** diseñada para transformar el historial de operaciones consolidado de Balanz Capital en un tablero interactivo.
+Una herramienta web **independiente, local y de código abierto** diseñada para transformar el historial de operaciones consolidado de Balanz Capital y Cocos Capital en un tablero interactivo.
 
 ## Características Principales
 
-- **Carga Instantánea**: Simplemente arrastrá y soltá tu archivo `.xlsx` descargado de la plataforma Balanz.
+- **Carga Instantánea**: Simplemente arrastrá y soltá tu archivo `.xlsx` o `.csv` descargado de las plataformas de Balanz o Cocos.
 - **Dólar MEP Automático**: Obtiene cotizaciones en tiempo real del MEP para normalizar automáticamente tus inversiones bi-monetarias (Pesos y Dólares) sin configuraciones manuales.
 - **Gráfico de Evolución Histórica**: Seguimiento del capital total invertido a lo largo del tiempo, con filtros interactivos estilo Interactive Brokers (`1M`, `3M`, `6M`, `1Y`, `ALL`).
 - **Distribución de Cartera**: Visualiza la ponderación exacta de tus tenencias tanto a nivel individual como por tipo de activo
@@ -20,7 +20,7 @@ Una herramienta web **independiente, local y de código abierto** diseñada para
 
 La privacidad del usuario es una prioridad:
 
-- **Zero Cloud**: La lectura y análisis de los archivos Excel ocurre **completamente en tu navegador** (cliente local).
+- **Zero Cloud**: La lectura y análisis de los archivos ocurre **completamente en tu navegador** (cliente local).
 - **Sin Bases de Datos**: Tus datos de inversión sensibles nunca viajan ni son almacenados en ningún servidor externo.
 - **Código Abierto**: Podés auditar todo el código fuente del parseador y los cálculos matemáticos localmente.
 
@@ -57,13 +57,13 @@ Asegúrate de tener instalado [Node.js](https://nodejs.org/) (v18+) y tu gestor 
 - **Core**: Next.js (App Router) + TypeScript.
 - **Estilizado**: Tailwind CSS.
 - **Visualizaciones**: Recharts.
-- **Comprensión de datos**: Biblioteca `xlsx` para extraer datos estructurados del reporte Excel.
+- **Comprensión de datos**: Biblioteca `xlsx` para extraer datos estructurados de los reportes.
 - **APIs Externas**: Yahoo Finance (`yahoo-finance2`) para actualización de cotizaciones de activos.
 
 ## Descargo de Responsabilidad (Disclaimer)
 
 Esta aplicación es una **herramienta independiente** de visualización de datos desarrollada con fines educativos e informativos.
 
-**No se encuentra afiliada, asociada, respaldada, patrocinada ni vinculada formalmente con Balanz Capital S.A.** ni con ninguna de sus empresas subsidiarias o filiales. Las marcas, nombres y logos mencionados en este software pertenecen de forma exclusiva a sus respectivos titulares de propiedad intelectual.
+**No se encuentra afiliada, asociada, respaldada, patrocinada ni vinculada formalmente con Balanz Capital S.A. ni con Cocos Capital S.A.** ni con ninguna de sus empresas subsidiarias o filiales. Las marcas, nombres y logos mencionados en este software pertenecen de forma exclusiva a sus respectivos titulares de propiedad intelectual.
 
 Hecho en Argentina 🇦🇷 por [Tomas Wardoloff](https://github.com/Tomas-Wardoloff)

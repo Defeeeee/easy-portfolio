@@ -1,6 +1,6 @@
 import { ChevronLeft } from 'lucide-react';
-import { CurrencyToggle } from '@/components/CurrencyToggle';
-import { PrivacyToggle } from '@/components/PrivacyToggle';
+import { CurrencyToggle } from '@/components/ui/CurrencyToggle';
+import { PrivacyToggle } from '@/components/ui/PrivacyToggle';
 
 interface NavBarProps {
   arsToUsdRate: number;

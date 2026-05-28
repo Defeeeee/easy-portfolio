@@ -2,8 +2,8 @@
 
 import { useMemo } from 'react';
 import { Position } from '@/types';
-import { KPICard } from '@/components/charts/KPICard';
-import { AnimatedCurrency } from '@/components/AnimatedCurrency';
+import { KPICard } from '@/components/dashboard/charts/KPICard';
+import { AnimatedCurrency } from '@/components/ui/AnimatedCurrency';
 import { usePrivacy } from '@/context/PrivacyContext';
 
 interface KPICardsGridProps {

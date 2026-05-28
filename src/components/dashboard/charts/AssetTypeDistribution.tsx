@@ -5,7 +5,7 @@ import { PieChart, Pie, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Position } from '@/types';
 import { ASSET_TYPES } from '@/utils/assetTypes';
 import { Info } from 'lucide-react';
-import { CustomTooltip } from '@/components/charts/CustomTooltip';
+import { CustomTooltip } from '@/components/dashboard/charts/CustomTooltip';
 import { COLORS } from '@/constants/colors';
 
 interface AssetTypeDistributionProps {

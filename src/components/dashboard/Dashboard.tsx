@@ -2,13 +2,13 @@
 
 import { useMemo, useState } from 'react';
 import { Position, RawOrder } from '@/types';
-import { PortfolioDistribution } from '@/components/charts/PortfolioDistribution';
-import { AssetTypeDistribution } from '@/components/charts/AssetTypeDistribution';
-import { PositionsTable } from '@/components/PositionsTable';
-import { NavBar } from '@/components/NavBar';
-import { EvolutionChart } from '@/components/charts/EvolutionChart';
+import { PortfolioDistribution } from '@/components/dashboard/charts/PortfolioDistribution';
+import { AssetTypeDistribution } from '@/components/dashboard/charts/AssetTypeDistribution';
+import { PositionsTable } from '@/components/dashboard/PositionsTable';
+import { NavBar } from '@/components/layout/NavBar';
+import { EvolutionChart } from '@/components/dashboard/charts/EvolutionChart';
 import { PrivacyProvider } from '@/context/PrivacyContext';
-import { KPICardsGrid } from '@/components/KPICardsGrid';
+import { KPICardsGrid } from '@/components/dashboard/KPICardsGrid';
 import { Database } from 'lucide-react';
 
 interface DashboardProps {

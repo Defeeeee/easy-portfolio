@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { AnimatedCurrency } from './AnimatedCurrency';
+import { AnimatedCurrency } from '@/components/ui/AnimatedCurrency';
 import { Position } from '@/types';
 import {
   DndContext,

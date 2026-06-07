@@ -156,10 +156,12 @@ export function UploadView({
               onDrop={handleDrop}
             >
               <input
+                id="portfolio-upload"
                 type="file"
                 accept=".xlsx,.csv"
                 onChange={handleChange}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                aria-label="Subir archivo de historial de operaciones (.xlsx o .csv)"
               />
 
               <div className="flex flex-col items-center gap-3 text-center">
@@ -170,7 +172,7 @@ export function UploadView({
                   <p className="text-sm font-semibold text-slate-700">
                     Arrastrá o hacé clic para subir tu historial de operaciones
                   </p>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-slate-500 mt-1">
                     Los archivos pueden ser .xlsx o .csv dependiendo del broker
                   </p>
                 </div>
@@ -179,7 +181,7 @@ export function UploadView({
           )}
         </div>
 
-        <p className="mt-6 text-center text-[8px] leading-relaxed text-slate-400 font-normal max-w-md">
+        <p className="mt-6 text-center text-[11px] leading-relaxed text-slate-500 font-normal max-w-md">
           Esta aplicación es una herramienta independiente de visualización de datos y no se
           encuentra afiliada, asociada, respaldada ni vinculada formalmente con Balanz Capital S.A.
           o Cocos Capital S.A. ni con ninguna de sus entidades. Los nombres y marcas comerciales

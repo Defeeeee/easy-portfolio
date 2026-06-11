@@ -1,3 +1,4 @@
+import * as ToggleGroup from '@radix-ui/react-toggle-group';
 import { DollarSign, Banknote } from 'lucide-react';
 
 interface CurrencyToggleProps {
@@ -8,27 +9,37 @@ interface CurrencyToggleProps {
 
 export function CurrencyToggle({ currency, onChange, disabled }: CurrencyToggleProps) {
   return (
-    <div
+    <ToggleGroup.Root
+      type="single"
+      value={currency}
+      onValueChange={(value) => {
+        if (value === 'USD' || value === 'ARS') onChange(value);
+      }}
+      disabled={disabled}
       className={`flex items-center gap-0.5 p-0.5 rounded-lg bg-slate-50 ${disabled ? 'opacity-40 pointer-events-none' : ''}`}
+      aria-label="Seleccionar moneda"
     >
-      <button
-        onClick={() => onChange('USD')}
-        className={`cursor-pointer flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-all ${
-          currency === 'USD' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
-        }`}
+      <ToggleGroup.Item
+        value="USD"
+        className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-all
+          text-slate-400 hover:text-slate-600
+          data-[state=on]:text-slate-900"
+        aria-label="Dólares (USD)"
       >
         <DollarSign size={12} />
         USD
-      </button>
-      <button
-        onClick={() => onChange('ARS')}
-        className={`cursor-pointer flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-all ${
-          currency === 'ARS' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
-        }`}
+      </ToggleGroup.Item>
+
+      <ToggleGroup.Item
+        value="ARS"
+        className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-all
+          text-slate-400 hover:text-slate-600
+          data-[state=on]:text-slate-900"
+        aria-label="Pesos argentinos (ARS)"
       >
         <Banknote size={12} />
         ARS
-      </button>
-    </div>
+      </ToggleGroup.Item>
+    </ToggleGroup.Root>
   );
 }

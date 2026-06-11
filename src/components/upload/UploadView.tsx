@@ -81,7 +81,7 @@ export function UploadView({
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8 relative">
+    <div className="flex flex-col items-center min-h-screen py-12 px-8 pb-32 relative">
       {/* GitHub Repo Link - Top Right */}
       <div className="absolute top-6 right-6 md:top-8 md:right-8">
         <a
@@ -108,7 +108,7 @@ export function UploadView({
         </a>
       </div>
 
-      <div className="w-full max-w-xl my-auto flex flex-col items-center">
+      <div className="w-full max-w-xl mt-auto mb-auto flex flex-col items-center">
         {/* Header Wordmark */}
         <div className="text-center mb-8 w-full">
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
@@ -190,7 +190,11 @@ export function UploadView({
       </div>
 
       {/* Footer Broker Selection */}
-      <BrokerSelection selectedBroker={selectedBroker} onSelectBroker={setSelectedBroker} />
+      <div className="fixed bottom-0 left-0 right-0 flex justify-center pb-6 pt-4 pointer-events-none">
+        <div className="pointer-events-auto">
+          <BrokerSelection selectedBroker={selectedBroker} onSelectBroker={setSelectedBroker} />
+        </div>
+      </div>
     </div>
   );
 }

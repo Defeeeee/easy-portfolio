@@ -57,14 +57,17 @@ export function KPICardsGrid({
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
       <KPICard
         title="Total Invertido"
+        tooltip="Suma del costo de compra de todas tus posiciones abiertas, calculado en base a tus operaciones históricas."
         value={<AnimatedCurrency value={totalInvested} currency={globalCurrency} />}
       />
       <KPICard
         title="Valor Actual"
+        tooltip="Valuación de mercado de tu portfolio al precio actual de cada activo."
         value={<AnimatedCurrency value={currentTotalValue} currency={globalCurrency} />}
       />
       <KPICard
         title="P&L Latente"
+        tooltip="Ganancia o pérdida no realizada: diferencia entre el valor actual del portfolio y su costo de compra total. No incluye operaciones ya cerradas."
         value={<AnimatedCurrency value={totalPnlAbsolute} currency={globalCurrency} showSign />}
         valueColor={totalPnlAbsolute >= 0 ? 'text-emerald-600' : 'text-red-600'}
         badge={`${totalPnlPercentage >= 0 ? '+' : ''}${totalPnlPercentage.toFixed(2)}%`}
@@ -74,6 +77,7 @@ export function KPICardsGrid({
       />
       <KPICard
         title="Mejor Activo"
+        tooltip="El activo con mayor rendimiento porcentual desde su precio de compra promedio hasta el precio actual."
         value={bestAsset ? (isPrivate ? '***' : bestAsset.ticker) : '-'}
         badge={getBadgeText(bestAsset)}
         badgeColor={
@@ -84,6 +88,7 @@ export function KPICardsGrid({
       />
       <KPICard
         title="Peor Activo"
+        tooltip="El activo con menor rendimiento porcentual desde su precio de compra promedio hasta el precio actual."
         value={worstAsset ? (isPrivate ? '***' : worstAsset.ticker) : '-'}
         badge={getBadgeText(worstAsset)}
         badgeColor={

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { GripVertical } from 'lucide-react';
 import { AnimatedCurrency } from '@/components/ui/AnimatedCurrency';
 import { Position } from '@/types';
 import {
@@ -71,23 +72,7 @@ function SortableRow({
           {...listeners}
           className="text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing p-1"
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="8" y1="6" x2="21" y2="6"></line>
-            <line x1="8" y1="12" x2="21" y2="12"></line>
-            <line x1="8" y1="18" x2="21" y2="18"></line>
-            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-            <line x1="3" y1="18" x2="3.01" y2="18"></line>
-          </svg>
+          <GripVertical size={16} />
         </button>
       </td>
       <td className="col-span-1 order-1 flex items-center font-bold text-base text-slate-800 tracking-tight md:table-cell md:order-none md:px-6 md:py-4 md:text-center md:font-semibold md:text-sm">

@@ -7,9 +7,10 @@ interface NavBarProps {
   onReset: () => void;
   currency: 'USD' | 'ARS';
   onCurrencyChange: (currency: 'USD' | 'ARS') => void;
+  showControls?: boolean;
 }
 
-export function NavBar({ arsToUsdRate, onReset, currency, onCurrencyChange }: NavBarProps) {
+export function NavBar({ arsToUsdRate, onReset, currency, onCurrencyChange, showControls = true }: NavBarProps) {
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-4">
       <div className="flex items-center justify-between w-full md:block md:w-auto">
@@ -25,9 +26,11 @@ export function NavBar({ arsToUsdRate, onReset, currency, onCurrencyChange }: Na
         </p>
       </div>
       <div className="flex justify-between md:justify-end w-full md:w-auto gap-2">
-        <PrivacyToggle />
+        {showControls && <PrivacyToggle />}
 
-        <CurrencyToggle currency={currency} onChange={onCurrencyChange} disabled={!arsToUsdRate} />
+        {showControls && (
+          <CurrencyToggle currency={currency} onChange={onCurrencyChange} disabled={!arsToUsdRate} />
+        )}
 
         <button
           onClick={onReset}

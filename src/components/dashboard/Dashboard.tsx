@@ -46,6 +46,7 @@ export function Dashboard({ positions, orders, arsToUsdRate, onReset }: Dashboar
             onReset={onReset}
             currency={globalCurrency}
             onCurrencyChange={setGlobalCurrency}
+            showControls={false}
           />
 
           <div className="flex flex-col items-center justify-center py-24 text-center">

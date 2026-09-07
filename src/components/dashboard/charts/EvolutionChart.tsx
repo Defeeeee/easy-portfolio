@@ -12,7 +12,9 @@ import {
 } from 'recharts';
 import { Position, RawOrder } from '@/types';
 import { parseOrderDate } from '@/utils/parser';
+import { orderRateToUSD, sortOrders } from '@/utils/calculator';
 import { usePrivacy } from '@/context/PrivacyContext';
+import { formatCompact, formatCurrency, formatPercent } from '@/utils/format';
 
 interface EvolutionChartProps {
   orders: RawOrder[];
@@ -79,9 +81,7 @@ export function EvolutionChart({ orders, positions, arsToUsdRate, currency }: Ev
       return [];
     }
 
-    const sortedOrders = [...orders].sort(
-      (a, b) => parseOrderDate(a.Concertacion).getTime() - parseOrderDate(b.Concertacion).getTime()
-    );
+    const sortedOrders = sortOrders(orders);
 
     const firstDate = parseOrderDate(sortedOrders[0].Concertacion);
     const today = new Date();
@@ -106,11 +106,7 @@ export function EvolutionChart({ orders, positions, arsToUsdRate, currency }: Ev
         orderDate.setHours(0, 0, 0, 0);
         const ts = orderDate.getTime();
 
-        const isUSD =
-          order.Moneda.toLowerCase().includes('dólar') ||
-          order.Moneda.toLowerCase().includes('dollar');
-        const rate = isUSD ? 1 : arsToUsdRate > 0 ? 1 / arsToUsdRate : 0;
-        const priceUSD = Number(order.Precio) * rate;
+        const priceUSD = Number(order.Precio) * orderRateToUSD(order, arsToUsdRate);
 
         if (!rawAnchors[ts]) {
           rawAnchors[ts] = { sumPrice: 0, count: 0 };
@@ -127,6 +123,7 @@ export function EvolutionChart({ orders, positions, arsToUsdRate, currency }: Ev
         .sort((a, b) => a.timestamp - b.timestamp);
 
       // Final anchor is today with current price
+      if (anchors.length === 0) continue;
       const lastOrderPrice = anchors[anchors.length - 1].priceUSD;
       const pos = tickersWithPositions.get(ticker);
       const currentPriceUSD = pos?.currentPriceUSD ?? lastOrderPrice;
@@ -166,11 +163,7 @@ export function EvolutionChart({ orders, positions, arsToUsdRate, currency }: Ev
         }
 
         if (orderDate.getTime() === d.getTime()) {
-          const isUSD =
-            order.Moneda.toLowerCase().includes('dólar') ||
-            order.Moneda.toLowerCase().includes('dollar');
-          const rate = isUSD ? 1 : arsToUsdRate > 0 ? 1 / arsToUsdRate : 0;
-          const orderNetoUSD = Number(order.Neto) * rate;
+          const orderNetoUSD = Number(order.Neto) * orderRateToUSD(order, arsToUsdRate);
 
           if (order.Tipo === 'COMPRA') {
             cumulativeInvestedUSD += orderNetoUSD;
@@ -184,7 +177,7 @@ export function EvolutionChart({ orders, positions, arsToUsdRate, currency }: Ev
             costBasisHoldings[order.Ticker] -= order.Cantidad * avgPriceUSD;
             cumulativeInvestedUSD -= order.Cantidad * avgPriceUSD;
 
-            if (currentHoldings[order.Ticker] <= 0) {
+            if (Math.abs(currentHoldings[order.Ticker]) < 1e-6) {
               currentHoldings[order.Ticker] = 0;
               costBasisHoldings[order.Ticker] = 0;
             }
@@ -277,20 +270,14 @@ export function EvolutionChart({ orders, positions, arsToUsdRate, currency }: Ev
     };
   });
 
-  const currencyPrefix = currency === 'USD' ? 'US$ ' : 'AR$ ';
-  const formatYAxis = (value: number) => {
-    if (isPrivate) return '***';
-    if (value >= 1000000) return `${currencyPrefix}${(value / 1000000).toFixed(1)}M`;
-    if (value >= 1000) return `${currencyPrefix}${(value / 1000).toFixed(0)}k`;
-    return `${currencyPrefix}${value}`;
-  };
+  const formatYAxis = (value: number) => (isPrivate ? '***' : formatCompact(value, currency));
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+    <div className="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] overflow-hidden">
       <div className="px-6 py-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h3 className="text-sm font-semibold uppercase tracking-widest text-slate-500">
-            Evolución del Portafolio
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            Evolución del portafolio
           </h3>
           <div className="flex items-center gap-4 text-xs mt-1">
             <div className="flex items-center gap-1.5">
@@ -359,13 +346,6 @@ export function EvolutionChart({ orders, positions, arsToUsdRate, currency }: Ev
                   const pnlPercentage = valInvertido > 0 ? (pnlAbsolute / valInvertido) * 100 : 0;
                   const isProfit = pnlAbsolute >= 0;
 
-                  const formatVal = (val: number) => {
-                    return val.toLocaleString(currency === 'USD' ? 'en-US' : 'es-AR', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    });
-                  };
-
                   return (
                     <div className="bg-white p-4 border border-slate-100 shadow-xl rounded-lg min-w-[220px]">
                       <p className="text-sm font-semibold text-slate-700 mb-3 border-b border-slate-100 pb-1.5">
@@ -379,7 +359,7 @@ export function EvolutionChart({ orders, positions, arsToUsdRate, currency }: Ev
                             <span className="text-xs font-medium text-slate-500">Valor Actual</span>
                           </div>
                           <span className="text-sm font-bold text-slate-800">
-                            {isPrivate ? '***' : `${currencyPrefix}${formatVal(valActual)}`}
+                            {isPrivate ? '***' : formatCurrency(valActual, currency)}
                           </span>
                         </div>
 
@@ -392,7 +372,7 @@ export function EvolutionChart({ orders, positions, arsToUsdRate, currency }: Ev
                             </span>
                           </div>
                           <span className="text-sm font-semibold text-slate-600">
-                            {isPrivate ? '***' : `${currencyPrefix}${formatVal(valInvertido)}`}
+                            {isPrivate ? '***' : formatCurrency(valInvertido, currency)}
                           </span>
                         </div>
 
@@ -402,16 +382,9 @@ export function EvolutionChart({ orders, positions, arsToUsdRate, currency }: Ev
                           <span
                             className={`text-xs font-bold ${isProfit ? 'text-emerald-600' : 'text-red-600'}`}
                           >
-                            {isPrivate ? (
-                              '***'
-                            ) : (
-                              <>
-                                {isProfit ? '+' : ''}
-                                {currencyPrefix}
-                                {formatVal(pnlAbsolute)} ({isProfit ? '+' : ''}
-                                {pnlPercentage.toFixed(2)}%)
-                              </>
-                            )}
+                            {isPrivate
+                              ? '***'
+                              : `${formatCurrency(pnlAbsolute, currency, { showSign: true })} (${formatPercent(pnlPercentage)})`}
                           </span>
                         </div>
                       </div>

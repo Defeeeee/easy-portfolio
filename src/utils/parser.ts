@@ -142,8 +142,11 @@ export async function parseCocos(file: File): Promise<RawOrder[]> {
           }
 
           const cantidad = Math.abs(rawCantidad);
-          const precio = Math.abs(rawPrecio);
-          const bruto = Math.abs(rawBruto) || precio * cantidad;
+          const bruto = Math.abs(rawBruto) || Math.abs(rawPrecio * rawCantidad);
+          // La columna `precio` del export de Cocos no siempre viene por unidad:
+          // los FCI cotizan por cada 1.000 cuotapartes y las ON por cada 100 VN.
+          // `montoBruto` sí está en moneda real, así que derivamos el precio unitario.
+          const precio = cantidad > 0 && bruto > 0 ? bruto / cantidad : Math.abs(rawPrecio);
           const neto = Math.abs(rawTotal) || bruto;
 
           if (cantidad <= 0) continue;

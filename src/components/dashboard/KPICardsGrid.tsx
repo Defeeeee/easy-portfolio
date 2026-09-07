@@ -1,96 +1,80 @@
 'use client';
 
-import { useMemo } from 'react';
-import { Position } from '@/types';
+import { Position, PortfolioStats } from '@/types';
 import { KPICard } from '@/components/dashboard/charts/KPICard';
 import { AnimatedCurrency } from '@/components/ui/AnimatedCurrency';
-import { usePrivacy } from '@/context/PrivacyContext';
+import { formatPercent } from '@/utils/format';
 
 interface KPICardsGridProps {
   positions: Position[];
+  stats: PortfolioStats | null;
   globalCurrency: 'USD' | 'ARS';
+  currencyMultiplier: number;
   totalInvested: number;
   currentTotalValue: number;
   totalPnlAbsolute: number;
   totalPnlPercentage: number;
 }
 
+const POSITIVE_BADGE = 'bg-emerald-50 text-emerald-700';
+const NEGATIVE_BADGE = 'bg-rose-50 text-rose-700';
+
+const badgeFor = (value: number) => (value >= 0 ? POSITIVE_BADGE : NEGATIVE_BADGE);
+const colorFor = (value: number) => (value >= 0 ? 'text-emerald-600' : 'text-rose-600');
+
 export function KPICardsGrid({
   positions,
+  stats,
   globalCurrency,
+  currencyMultiplier,
   totalInvested,
   currentTotalValue,
   totalPnlAbsolute,
   totalPnlPercentage,
 }: KPICardsGridProps) {
-  const { isPrivate } = usePrivacy();
+  const realizedPnl = (stats?.realizedPnlUSD ?? 0) * currencyMultiplier;
+  const realizedPct = stats?.realizedPnlPercentage ?? 0;
+  const combinedPnl = totalPnlAbsolute + realizedPnl;
+  const combinedPct = totalInvested > 0 ? (combinedPnl / totalInvested) * 100 : 0;
 
-  // Calculate best performing asset (highest P&L percentage)
-  const bestAsset = useMemo(() => {
-    if (positions.length === 0) return null;
-    return positions.reduce((best, current) => {
-      const currentPct = current.pnlPercentage ?? 0;
-      const bestPct = best.pnlPercentage ?? 0;
-      return currentPct > bestPct ? current : best;
-    }, positions[0]);
-  }, [positions]);
-
-  // Calculate worst performing asset (lowest P&L percentage)
-  const worstAsset = useMemo(() => {
-    if (positions.length === 0) return null;
-    return positions.reduce((worst, current) => {
-      const currentPct = current.pnlPercentage ?? 0;
-      const worstPct = worst.pnlPercentage ?? 0;
-      return currentPct < worstPct ? current : worst;
-    }, positions[0]);
-  }, [positions]);
-
-  // Formatter for Best/Worst badge text
-  const getBadgeText = (pos: Position | null) => {
-    if (!pos) return undefined;
-    if (isPrivate) return '***';
-    const pct = pos.pnlPercentage ?? 0;
-    return `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
-  };
+  const valuedPositions = positions.filter((p) => p.currentValueUSD !== undefined).length;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+      <KPICard
+        title="Valor Actual"
+        emphasis
+        value={<AnimatedCurrency value={currentTotalValue} currency={globalCurrency} />}
+        hint={`${valuedPositions} de ${positions.length} posiciones con precio`}
+      />
       <KPICard
         title="Total Invertido"
         value={<AnimatedCurrency value={totalInvested} currency={globalCurrency} />}
-      />
-      <KPICard
-        title="Valor Actual"
-        value={<AnimatedCurrency value={currentTotalValue} currency={globalCurrency} />}
+        hint="Costo de las tenencias abiertas"
       />
       <KPICard
         title="P&L Latente"
         value={<AnimatedCurrency value={totalPnlAbsolute} currency={globalCurrency} showSign />}
-        valueColor={totalPnlAbsolute >= 0 ? 'text-emerald-600' : 'text-red-600'}
-        badge={`${totalPnlPercentage >= 0 ? '+' : ''}${totalPnlPercentage.toFixed(2)}%`}
-        badgeColor={
-          totalPnlAbsolute >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-        }
+        valueColor={colorFor(totalPnlAbsolute)}
+        badge={formatPercent(totalPnlPercentage)}
+        badgeColor={badgeFor(totalPnlAbsolute)}
+        hint="Sobre posiciones abiertas"
       />
       <KPICard
-        title="Mejor Activo"
-        value={bestAsset ? (isPrivate ? '***' : bestAsset.ticker) : '-'}
-        badge={getBadgeText(bestAsset)}
-        badgeColor={
-          bestAsset && (bestAsset.pnlPercentage ?? 0) >= 0
-            ? 'bg-emerald-100 text-emerald-700'
-            : 'bg-red-100 text-red-700'
-        }
+        title="P&L Realizado"
+        value={<AnimatedCurrency value={realizedPnl} currency={globalCurrency} showSign />}
+        valueColor={colorFor(realizedPnl)}
+        badge={formatPercent(realizedPct)}
+        badgeColor={badgeFor(realizedPnl)}
+        hint={`${stats?.closedTrades.length ?? 0} operaciones cerradas`}
       />
       <KPICard
-        title="Peor Activo"
-        value={worstAsset ? (isPrivate ? '***' : worstAsset.ticker) : '-'}
-        badge={getBadgeText(worstAsset)}
-        badgeColor={
-          worstAsset && (worstAsset.pnlPercentage ?? 0) >= 0
-            ? 'bg-emerald-100 text-emerald-700'
-            : 'bg-red-100 text-red-700'
-        }
+        title="Resultado Total"
+        value={<AnimatedCurrency value={combinedPnl} currency={globalCurrency} showSign />}
+        valueColor={colorFor(combinedPnl)}
+        badge={formatPercent(combinedPct)}
+        badgeColor={badgeFor(combinedPnl)}
+        hint="Latente + realizado"
       />
     </div>
   );

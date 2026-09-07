@@ -1,32 +1,45 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export function useAnimatedNumber(value: number, duration = 400) {
   const [displayValue, setDisplayValue] = useState(value);
+  // Espejo del último valor emitido. Lo escribe únicamente la animación, así el
+  // efecto sabe desde dónde arrancar sin tener que depender del estado.
+  const emittedRef = useRef(value);
 
   useEffect(() => {
-    let startTimestamp: number;
-    const startValue = displayValue;
-    const endValue = value;
+    const startValue = emittedRef.current;
+    if (startValue === value) return;
 
-    if (startValue === endValue) return;
+    const emit = (next: number) => {
+      emittedRef.current = next;
+      setDisplayValue(next);
+    };
+
+    // Sin repintado no hay requestAnimationFrame: en una pestaña oculta la
+    // animación nunca correría y el número quedaría congelado en el anterior.
+    if (typeof document !== 'undefined' && document.hidden) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- salto directo al valor final: no hay animación posible
+      emit(value);
+      return;
+    }
+
+    let startTimestamp: number | undefined;
+    let animationId = 0;
 
     const step = (timestamp: number) => {
-      if (!startTimestamp) startTimestamp = timestamp;
+      if (startTimestamp === undefined) startTimestamp = timestamp;
       const progress = Math.min((timestamp - startTimestamp) / duration, 1);
 
-      // easeOutQuart
-      const ease = 1 - Math.pow(1 - progress, 4);
-
-      setDisplayValue(startValue + (endValue - startValue) * ease);
-
       if (progress < 1) {
-        window.requestAnimationFrame(step);
+        const ease = 1 - Math.pow(1 - progress, 4); // easeOutQuart
+        emit(startValue + (value - startValue) * ease);
+        animationId = window.requestAnimationFrame(step);
       } else {
-        setDisplayValue(endValue);
+        emit(value);
       }
     };
 
-    const animationId = window.requestAnimationFrame(step);
+    animationId = window.requestAnimationFrame(step);
     return () => window.cancelAnimationFrame(animationId);
   }, [value, duration]);
 

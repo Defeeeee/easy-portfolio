@@ -5,14 +5,16 @@ import { UploadView } from '@/components/upload/UploadView';
 import { BrokerType } from '@/constants/brokers';
 import { Dashboard } from '@/components/dashboard/Dashboard';
 import { parseBalanz, parseCocos } from '@/utils/parser';
-import { calculatePositions } from '@/utils/calculator';
-import { Position, RawOrder } from '@/types';
+import { calculatePositions, enrichPositions, lastTradedPrices } from '@/utils/calculator';
+import { calculateStats } from '@/utils/stats';
+import { PortfolioStats, Position, RawOrder } from '@/types';
 import { fetchDolarRate, fetchCurrentPrices } from '@/utils/api';
 
 export default function Home() {
   const [arsToUsdRate, setArsToUsdRate] = useState<number>(0);
   const [positions, setPositions] = useState<Position[]>([]);
   const [orders, setOrders] = useState<RawOrder[]>([]);
+  const [stats, setStats] = useState<PortfolioStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isDashboard, setIsDashboard] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,35 +34,23 @@ export default function Home() {
           break;
       }
 
-      const [orders, fetchedRate] = await Promise.all([parsePromise, fetchDolarRate()]);
+      const [parsedOrders, fetchedRate] = await Promise.all([parsePromise, fetchDolarRate()]);
 
       setArsToUsdRate(fetchedRate);
-      const calculatedPositions = calculatePositions(orders, fetchedRate);
+      const calculatedPositions = calculatePositions(parsedOrders, fetchedRate);
 
-      const tickers = calculatedPositions.map((p) => p.ticker);
-      const pricesMap = await fetchCurrentPrices(tickers);
+      const pricesMap = await fetchCurrentPrices(calculatedPositions.map((p) => p.ticker));
 
-      const enrichedPositions = calculatedPositions.map((pos) => {
-        const quote = pricesMap[pos.ticker];
-        if (!quote) return pos;
-
-        const currentPriceUSD = quote.currency === 'ARS' ? quote.price / fetchedRate : quote.price;
-        const currentValueUSD = pos.quantity * currentPriceUSD;
-        const pnlAbsolute = currentValueUSD - pos.investedValueUSD;
-        const pnlPercentage =
-          pos.investedValueUSD > 0 ? (pnlAbsolute / pos.investedValueUSD) * 100 : 0;
-
-        return {
-          ...pos,
-          currentPriceUSD,
-          currentValueUSD,
-          pnlAbsolute,
-          pnlPercentage,
-        };
-      });
+      const enrichedPositions = enrichPositions(
+        calculatedPositions,
+        pricesMap,
+        lastTradedPrices(parsedOrders, fetchedRate),
+        fetchedRate
+      );
 
       setPositions(enrichedPositions);
-      setOrders(orders);
+      setStats(calculateStats(parsedOrders, fetchedRate));
+      setOrders(parsedOrders);
       setIsDashboard(true);
     } catch (err) {
       console.error('Error al procesar el archivo o la API:', err);
@@ -74,6 +64,7 @@ export default function Home() {
     setIsDashboard(false);
     setPositions([]);
     setOrders([]);
+    setStats(null);
   };
 
   return (
@@ -90,6 +81,7 @@ export default function Home() {
         <Dashboard
           positions={positions}
           orders={orders}
+          stats={stats}
           arsToUsdRate={arsToUsdRate}
           onReset={handleReset}
         />

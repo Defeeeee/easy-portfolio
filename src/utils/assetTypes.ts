@@ -4,6 +4,7 @@ export const ASSET_TYPES = {
   ON: 'Oblig. Negociable',
   BONO_PUBLICO: 'Bono Público',
   FCI: 'Fondo Común',
+  EFECTIVO: 'Efectivo / FX',
   OTRO: 'Otro',
 } as const;
 
@@ -24,22 +25,33 @@ const BONO_PUBLICO_KEYWORDS = [
   'DISCOUNT',
 ];
 
-const ON_KEYWORDS = ['REG S', 'REGS', 'OBLIGACION NEGOCIABLE', ' ON ', ' ON$', 'SENIOR'];
+const ON_KEYWORDS = ['REG S', 'REGS', 'OBLIGACION NEGOCIABLE', 'SENIOR'];
+
+const EFECTIVO_KEYWORDS = [
+  'DOLAR ESTADOUNIDENSE',
+  'DÓLAR ESTADOUNIDENSE',
+  'PESO ARGENTINO',
+  'DOLAR MEP',
+  'EFECTIVO',
+];
+
+// Clases de fondo: "FCI ...", "FONDO ...", "F.C.I ...", "... FCI"
+const FCI_PATTERN = /(^|[^A-Z])(FCI|F\.C\.I|FONDO)([^A-Z]|$)/;
 
 export function getAssetType(especie: string, ticker: string): AssetType {
   const especieUpper = especie.toUpperCase().trim();
   const tickerUpper = ticker.toUpperCase().trim();
 
   // CEDEARs are always labeled explicitly
-  if (especieUpper.startsWith('CEDEAR') || especieUpper.includes('CEDEAR')) {
+  if (especieUpper.includes('CEDEAR')) {
     return ASSET_TYPES.CEDEAR;
   }
 
-  if (
-    especieUpper.includes('FONDO') ||
-    especieUpper.includes(' FCI') ||
-    especieUpper.includes('F.C.I')
-  ) {
+  if (EFECTIVO_KEYWORDS.some((kw) => especieUpper.includes(kw))) {
+    return ASSET_TYPES.EFECTIVO;
+  }
+
+  if (FCI_PATTERN.test(especieUpper)) {
     return ASSET_TYPES.FCI;
   }
 
@@ -48,15 +60,17 @@ export function getAssetType(especie: string, ticker: string): AssetType {
   }
 
   const hasOnKeyword = ON_KEYWORDS.some((kw) => especieUpper.includes(kw));
+  // Formato Cocos para ONs: "ON TARJETA NARANJA CL.66 S.1 30/11/26 $"
+  const looksLikeCocosON = /^ON\s/.test(especieUpper) || /\bCL\.\d+\b/.test(especieUpper);
   const looksLikeBond =
     /\d+[.,]\d+%/.test(especieUpper) &&
     (/\bV\s+\d{2}\//.test(especieUpper) || especieUpper.includes('VTO'));
 
-  if (hasOnKeyword || looksLikeBond) {
+  if (hasOnKeyword || looksLikeCocosON || looksLikeBond) {
     return ASSET_TYPES.ON;
   }
 
-  if (tickerUpper.length <= 5) {
+  if (tickerUpper.length <= 5 && /^[A-Z0-9.]+$/.test(tickerUpper)) {
     return ASSET_TYPES.ACCION;
   }
 

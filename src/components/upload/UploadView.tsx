@@ -7,7 +7,7 @@ import { BROKERS, type BrokerType } from '@/constants/brokers';
 import { BrokerSelection } from '@/components/upload/BrokerSelection';
 
 interface UploadViewProps {
-  onFileSelect: (file: File, broker: BrokerType) => void;
+  onFileSelect: (files: File[], broker: BrokerType) => void;
   isLoading: boolean;
   error?: string | null;
   onError: (msg: string) => void;
@@ -52,32 +52,38 @@ export function UploadView({
     else if (e.type === 'dragleave') setDragActive(false);
   }, []);
 
+  const submitFiles = useCallback(
+    (fileList: FileList | null) => {
+      const files = Array.from(fileList ?? []);
+      if (files.length === 0) return;
+
+      const valid = files.filter((f) => f.name.endsWith('.xlsx') || f.name.endsWith('.csv'));
+      if (valid.length === 0) {
+        onError('Por favor subí archivos .xlsx o .csv válidos.');
+        return;
+      }
+      if (valid.length < files.length) {
+        onError('Algunos archivos no eran .xlsx ni .csv y se ignoraron.');
+        return;
+      }
+
+      onFileSelect(valid, selectedBroker);
+    },
+    [onFileSelect, onError, selectedBroker]
+  );
+
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
       setDragActive(false);
-      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-        const file = e.dataTransfer.files[0];
-        if (file.name.endsWith('.xlsx') || file.name.endsWith('.csv')) {
-          onFileSelect(file, selectedBroker);
-        } else {
-          onError('Por favor sube un archivo .xlsx o .csv válido.');
-        }
-      }
+      submitFiles(e.dataTransfer.files);
     },
-    [onFileSelect, onError, selectedBroker]
+    [submitFiles]
   );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      if (file.name.endsWith('.xlsx') || file.name.endsWith('.csv')) {
-        onFileSelect(file, selectedBroker);
-      } else {
-        onError('Por favor sube un archivo .xlsx o .csv válido.');
-      }
-    }
+    submitFiles(e.target.files);
   };
 
   return (
@@ -85,10 +91,10 @@ export function UploadView({
       {/* GitHub Repo Link - Top Right */}
       <div className="absolute top-6 right-6 md:top-8 md:right-8">
         <a
-          href="https://github.com/Tomas-Wardoloff/balanz-report"
+          href="https://github.com/Tomas-Wardoloff/easy-portfolio"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-slate-300 hover:text-slate-600 transition-colors duration-200"
+          className="text-slate-300 hover:text-slate-600 transition-colors duration-200 dark:text-slate-600 dark:hover:text-slate-300"
           title="Ver repositorio en GitHub"
         >
           <svg
@@ -111,7 +117,7 @@ export function UploadView({
       <div className="w-full max-w-xl my-auto flex flex-col items-center">
         {/* Header Wordmark */}
         <div className="text-center mb-8 w-full">
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight dark:text-slate-100">
             Tus inversiones de{' '}
             <Typewriter
               words={typewriterWords}
@@ -122,33 +128,35 @@ export function UploadView({
               renderText={BROKERS[selectedBroker].renderText}
             />
           </h1>
-          <p className="text-md text-slate-500 mt-2">De una manera más simple</p>
+          <p className="text-md text-slate-500 mt-2 dark:text-slate-400">
+            De una manera más simple
+          </p>
         </div>
 
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-100 p-8 flex flex-col gap-7">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-100 p-8 flex flex-col gap-7 dark:bg-slate-900 dark:border-slate-800">
           {error ? (
-            <div className="flex flex-col items-center justify-center w-full py-10 px-6 border-2 border-red-200 bg-slate-50 rounded-xl text-center">
-              <div className="p-3 text-red-600 rounded-xl mb-4">
+            <div className="flex flex-col items-center justify-center w-full py-10 px-6 border-2 border-red-200 bg-slate-50 rounded-xl text-center dark:bg-slate-800/60">
+              <div className="p-3 text-red-600 rounded-xl mb-4 dark:text-rose-400">
                 <AlertCircle size={32} />
               </div>
-              <p className="text-sm font-semibold text-red-700 mb-2">{error}</p>
+              <p className="text-sm font-semibold text-red-700 mb-2 dark:text-rose-400">{error}</p>
               <p className="text-xs text-red-500 font-medium">
                 Podrás volver a intentarlo en {countdown} segundos...
               </p>
             </div>
           ) : isLoading ? (
-            <div className="flex flex-col items-center justify-center w-full py-12 px-6 border-2 border-slate-100 bg-slate-50 rounded-xl text-center">
-              <Loader2 size={40} className="animate-spin text-slate-600 mb-4" />
-              <p className="text-sm font-semibold text-slate-700">
-                Calculando cotizaciones y armando tu portfolio...
+            <div className="flex flex-col items-center justify-center w-full py-12 px-6 border-2 border-slate-100 bg-slate-50 rounded-xl text-center dark:bg-slate-800/60 dark:border-slate-800">
+              <Loader2 size={40} className="animate-spin text-slate-600 mb-4 dark:text-slate-300" />
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                Trayendo cotizaciones e historial, y armando tu portfolio...
               </p>
             </div>
           ) : (
             <div
               className={`relative flex flex-col items-center justify-center w-full py-10 px-6 border-2 border-dashed rounded-xl transition-all duration-200 ${
                 dragActive
-                  ? 'border-emerald-400 bg-emerald-50'
-                  : 'border-slate-200 hover:border-slate-300 bg-slate-50 cursor-pointer'
+                  ? 'border-emerald-400 bg-emerald-50 dark:border-emerald-600 dark:bg-emerald-950/40'
+                  : 'border-slate-200 hover:border-slate-300 bg-slate-50 cursor-pointer dark:border-slate-800 dark:hover:border-slate-700 dark:bg-slate-800/60'
               }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
@@ -158,20 +166,26 @@ export function UploadView({
               <input
                 type="file"
                 accept=".xlsx,.csv"
+                multiple
                 onChange={handleChange}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
 
               <div className="flex flex-col items-center gap-3 text-center">
-                <div className={`p-3 rounded-xl transition-colors text-slate-500`}>
+                <div
+                  className={`p-3 rounded-xl transition-colors text-slate-500 dark:text-slate-400`}
+                >
                   <Upload size={24} />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-700">
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                     Arrastrá o hacé clic para subir tu historial de operaciones
                   </p>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-slate-400 mt-1 dark:text-slate-500">
                     Los archivos pueden ser .xlsx o .csv dependiendo del broker
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1 dark:text-slate-500">
+                    Podés soltar varios a la vez: los exports que se solapen se deduplican solos
                   </p>
                 </div>
               </div>
@@ -179,7 +193,7 @@ export function UploadView({
           )}
         </div>
 
-        <p className="mt-6 text-center text-[8px] leading-relaxed text-slate-400 font-normal max-w-md">
+        <p className="mt-6 text-center text-[8px] leading-relaxed text-slate-400 font-normal max-w-md dark:text-slate-500">
           Esta aplicación es una herramienta independiente de visualización de datos y no se
           encuentra afiliada, asociada, respaldada ni vinculada formalmente con Balanz Capital S.A.
           o Cocos Capital S.A. ni con ninguna de sus entidades. Los nombres y marcas comerciales

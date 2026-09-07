@@ -1,6 +1,8 @@
 import { ClosedTrade, Position, PriceSource, RawOrder } from '../types';
 import { getAssetType } from './assetTypes';
+import { FxRates } from './fx';
 import { parseOrderDate } from './parser';
+import { startOfDay } from './series';
 
 /** Cero práctico: por debajo de esto una tenencia es ruido de punto flotante. */
 const QTY_EPSILON = 1e-6;
@@ -10,9 +12,13 @@ export function isUsdOrder(order: RawOrder): boolean {
   return m.includes('dólar') || m.includes('dolar') || m.includes('dollar') || m.includes('usd');
 }
 
-export function orderRateToUSD(order: RawOrder, arsToUsdRate: number): number {
+/**
+ * Factor para expresar el monto de una orden en dólares. Para las órdenes en
+ * pesos usa el MEP **del día de la operación**, no el de hoy.
+ */
+export function orderRateToUSD(order: RawOrder, fx: FxRates): number {
   if (isUsdOrder(order)) return 1;
-  return arsToUsdRate > 0 ? 1 / arsToUsdRate : 0;
+  return fx.usdFactorAt(startOfDay(parseOrderDate(order.Concertacion)));
 }
 
 /**
@@ -41,13 +47,12 @@ interface Lot {
  * Recorre las órdenes aplicando costo promedio ponderado y devuelve, para cada
  * ticker, la tenencia viva y las ventas ya cerradas.
  */
-function walkOrders(orders: RawOrder[], arsToUsdRate: number) {
+function walkOrders(orders: RawOrder[], fx: FxRates) {
   const lots = new Map<string, Lot>();
   const closed: ClosedTrade[] = [];
 
   for (const order of sortOrders(orders)) {
-    const rate = orderRateToUSD(order, arsToUsdRate);
-    const orderNetoUSD = Number(order.Neto) * rate;
+    const orderNetoUSD = Number(order.Neto) * orderRateToUSD(order, fx);
 
     const lot = lots.get(order.Ticker) ?? {
       quantity: 0,
@@ -96,8 +101,8 @@ function walkOrders(orders: RawOrder[], arsToUsdRate: number) {
   return { lots, closed };
 }
 
-export function calculatePositions(orders: RawOrder[], arsToUsdRate: number): Position[] {
-  const { lots } = walkOrders(orders, arsToUsdRate);
+export function calculatePositions(orders: RawOrder[], fx: FxRates): Position[] {
+  const { lots } = walkOrders(orders, fx);
 
   const positions: Position[] = [];
   lots.forEach((lot, ticker) => {
@@ -116,8 +121,8 @@ export function calculatePositions(orders: RawOrder[], arsToUsdRate: number): Po
   return positions.sort((a, b) => b.investedValueUSD - a.investedValueUSD);
 }
 
-export function calculateClosedTrades(orders: RawOrder[], arsToUsdRate: number): ClosedTrade[] {
-  return walkOrders(orders, arsToUsdRate).closed;
+export function calculateClosedTrades(orders: RawOrder[], fx: FxRates): ClosedTrade[] {
+  return walkOrders(orders, fx).closed;
 }
 
 /**
@@ -126,11 +131,11 @@ export function calculateClosedTrades(orders: RawOrder[], arsToUsdRate: number):
  */
 export function lastTradedPrices(
   orders: RawOrder[],
-  arsToUsdRate: number
+  fx: FxRates
 ): Map<string, { priceUSD: number; date: string }> {
   const map = new Map<string, { priceUSD: number; date: string }>();
   for (const order of sortOrders(orders)) {
-    const priceUSD = Number(order.Precio) * orderRateToUSD(order, arsToUsdRate);
+    const priceUSD = Number(order.Precio) * orderRateToUSD(order, fx);
     if (priceUSD > 0) {
       map.set(order.Ticker, { priceUSD, date: order.Concertacion });
     }
@@ -143,7 +148,7 @@ export function enrichPositions(
   positions: Position[],
   quotes: Record<string, { price: number; currency: string }>,
   fallbacks: Map<string, { priceUSD: number; date: string }>,
-  arsToUsdRate: number
+  spotArsToUsd: number
 ): Position[] {
   return positions.map((pos) => {
     const quote = quotes[pos.ticker];
@@ -152,8 +157,9 @@ export function enrichPositions(
     let priceDate: string | undefined;
 
     if (quote && quote.price > 0) {
+      // El precio de mercado es de hoy, así que acá sí corresponde el spot.
       currentPriceUSD =
-        quote.currency === 'ARS' && arsToUsdRate > 0 ? quote.price / arsToUsdRate : quote.price;
+        quote.currency === 'ARS' && spotArsToUsd > 0 ? quote.price / spotArsToUsd : quote.price;
       priceSource = 'market';
     } else {
       const fallback = fallbacks.get(pos.ticker);

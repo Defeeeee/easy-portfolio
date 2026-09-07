@@ -75,12 +75,15 @@ export function MonthlyActivityChart({
                 content={({ active, payload, label }) => {
                   if (!active || !payload?.length) return null;
                   return (
-                    <div className="bg-white px-4 py-3 rounded-xl shadow-lg border border-slate-100">
-                      <p className="text-xs font-semibold uppercase tracking-widest text-slate-800 mb-2">
+                    <div className="bg-white px-4 py-3 rounded-xl shadow-lg border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-slate-800 mb-2 dark:text-slate-200">
                         {label}
                       </p>
                       {payload.map((entry) => (
-                        <p key={entry.name} className="text-sm text-slate-600 flex gap-3">
+                        <p
+                          key={entry.name}
+                          className="text-sm text-slate-600 flex gap-3 dark:text-slate-300"
+                        >
                           <span className="w-16" style={{ color: entry.color }}>
                             {entry.name}
                           </span>
@@ -91,7 +94,7 @@ export function MonthlyActivityChart({
                           </span>
                         </p>
                       ))}
-                      <p className="text-xs text-slate-400 mt-1.5">
+                      <p className="text-xs text-slate-400 mt-1.5 dark:text-slate-500">
                         {payload[0]?.payload?.trades} operaciones
                       </p>
                     </div>
@@ -101,7 +104,9 @@ export function MonthlyActivityChart({
               <Legend
                 iconType="circle"
                 iconSize={8}
-                formatter={(value) => <span className="text-xs text-slate-600">{value}</span>}
+                formatter={(value) => (
+                  <span className="text-xs text-slate-600 dark:text-slate-300">{value}</span>
+                )}
               />
               <Bar dataKey="Compras" fill="#6366f1" radius={[3, 3, 0, 0]} maxBarSize={22} />
               <Bar dataKey="Ventas" fill="#10b981" radius={[3, 3, 0, 0]} maxBarSize={22} />

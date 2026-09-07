@@ -1,8 +1,18 @@
 @import 'tailwindcss';
 
+/* Modo oscuro por clase en <html>, para poder alternarlo desde la app. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #f5f7fa;
   --foreground: #0f172a;
+  --surface-page: #f8fafc;
+}
+
+.dark {
+  --background: #0b1120;
+  --foreground: #e2e8f0;
+  --surface-page: #0b1120;
 }
 
 @theme inline {

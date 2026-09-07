@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
+import { ThemeProvider } from '@/context/ThemeContext';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -53,7 +54,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
       <Script
         src="https://www.googletagmanager.com/gtag/js?id=G-LG8199G5QE"
         strategy="afterInteractive"

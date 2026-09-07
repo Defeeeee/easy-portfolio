@@ -48,7 +48,7 @@ export function PnLByAssetChart({ positions, arsToUsdRate, currency }: PnLByAsse
   if (data.length === 0) {
     return (
       <Card title="P&L por activo">
-        <p className="text-sm text-slate-400 py-12 text-center">
+        <p className="text-sm text-slate-400 py-12 text-center dark:text-slate-500">
           Ninguna posición tiene precio de mercado para comparar.
         </p>
       </Card>
@@ -104,13 +104,15 @@ export function PnLByAssetChart({ positions, arsToUsdRate, currency }: PnLByAsse
           </ResponsiveContainer>
         )}
       </div>
-      <ul className="mt-5 pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
+      <ul className="mt-5 pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 dark:border-slate-800">
         {data.map((d) => (
           <li key={d.ticker} className="flex items-baseline justify-between gap-3 text-xs">
-            <span className="font-semibold text-slate-600">{d.ticker}</span>
-            <span className="font-mono tabular-nums text-slate-500">
+            <span className="font-semibold text-slate-600 dark:text-slate-300">{d.ticker}</span>
+            <span className="font-mono tabular-nums text-slate-500 dark:text-slate-400">
               {isPrivate ? '***' : formatCurrency(d.pnl, currency, { showSign: true })}
-              <span className={`ml-2 ${d.pnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+              <span
+                className={`ml-2 ${d.pnl >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}
+              >
                 {formatPercent(d.pct)}
               </span>
             </span>

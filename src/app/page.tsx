@@ -1,90 +1,77 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { UploadView } from '@/components/upload/UploadView';
 import { BrokerType } from '@/constants/brokers';
 import { Dashboard } from '@/components/dashboard/Dashboard';
-import { parseBalanz, parseCocos } from '@/utils/parser';
-import { calculatePositions, enrichPositions, lastTradedPrices } from '@/utils/calculator';
-import { calculateStats } from '@/utils/stats';
-import { PortfolioStats, Position, RawOrder } from '@/types';
-import { fetchDolarRate, fetchCurrentPrices } from '@/utils/api';
+import { PortfolioModel, buildPortfolio, parseFiles } from '@/utils/portfolio';
+import { clearSession, loadSession, saveSession } from '@/utils/storage';
 
 export default function Home() {
-  const [arsToUsdRate, setArsToUsdRate] = useState<number>(0);
-  const [positions, setPositions] = useState<Position[]>([]);
-  const [orders, setOrders] = useState<RawOrder[]>([]);
-  const [stats, setStats] = useState<PortfolioStats | null>(null);
+  const [model, setModel] = useState<PortfolioModel | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isDashboard, setIsDashboard] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const restored = useRef(false);
 
-  const handleFileSelect = async (file: File, broker: BrokerType) => {
+  // Rearma el último dashboard sin pedir el archivo de nuevo.
+  useEffect(() => {
+    if (restored.current) return;
+    restored.current = true;
+
+    const session = loadSession();
+    if (!session) {
+      setIsRestoring(false);
+      return;
+    }
+
+    buildPortfolio(session.orders, session.cash)
+      .then(setModel)
+      .catch((err) => {
+        console.error('No se pudo restaurar la sesión guardada:', err);
+        clearSession();
+      })
+      .finally(() => setIsRestoring(false));
+  }, []);
+
+  const handleFileSelect = useCallback(async (files: File[], broker: BrokerType) => {
     try {
       setIsLoading(true);
 
-      let parsePromise: Promise<RawOrder[]>;
-      switch (broker) {
-        case 'cocos':
-          parsePromise = parseCocos(file);
-          break;
-        case 'balanz':
-        default:
-          parsePromise = parseBalanz(file);
-          break;
-      }
+      const { orders, cash, duplicates } = await parseFiles(files, broker);
+      const built = await buildPortfolio(orders, cash, duplicates);
 
-      const [parsedOrders, fetchedRate] = await Promise.all([parsePromise, fetchDolarRate()]);
-
-      setArsToUsdRate(fetchedRate);
-      const calculatedPositions = calculatePositions(parsedOrders, fetchedRate);
-
-      const pricesMap = await fetchCurrentPrices(calculatedPositions.map((p) => p.ticker));
-
-      const enrichedPositions = enrichPositions(
-        calculatedPositions,
-        pricesMap,
-        lastTradedPrices(parsedOrders, fetchedRate),
-        fetchedRate
-      );
-
-      setPositions(enrichedPositions);
-      setStats(calculateStats(parsedOrders, fetchedRate));
-      setOrders(parsedOrders);
-      setIsDashboard(true);
+      saveSession({ broker, orders, cash, fileNames: files.map((f) => f.name) });
+      setModel(built);
     } catch (err) {
       console.error('Error al procesar el archivo o la API:', err);
-      setError('Hubo un error al procesar el archivo o al obtener la cotización del Dólar MEP.');
+      setError(
+        err instanceof Error && err.message.includes('Bull Market')
+          ? err.message
+          : 'Hubo un error al procesar el archivo o al obtener la cotización del Dólar MEP.'
+      );
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const handleReset = () => {
-    setIsDashboard(false);
-    setPositions([]);
-    setOrders([]);
-    setStats(null);
-  };
+  const handleReset = useCallback(() => {
+    clearSession();
+    setModel(null);
+  }, []);
 
   return (
-    <main className="min-h-screen bg-[#f8fafc]">
-      {!isDashboard ? (
+    <main className="min-h-screen bg-[var(--surface-page)]">
+      {!model ? (
         <UploadView
           onFileSelect={handleFileSelect}
-          isLoading={isLoading}
+          isLoading={isLoading || isRestoring}
           error={error}
           onError={setError}
           onErrorClear={() => setError(null)}
         />
       ) : (
-        <Dashboard
-          positions={positions}
-          orders={orders}
-          stats={stats}
-          arsToUsdRate={arsToUsdRate}
-          onReset={handleReset}
-        />
+        <Dashboard model={model} onReset={handleReset} />
       )}
     </main>
   );

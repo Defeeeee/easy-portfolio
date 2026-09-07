@@ -18,7 +18,6 @@ export function useAnimatedNumber(value: number, duration = 400) {
     // Sin repintado no hay requestAnimationFrame: en una pestaña oculta la
     // animación nunca correría y el número quedaría congelado en el anterior.
     if (typeof document !== 'undefined' && document.hidden) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- salto directo al valor final: no hay animación posible
       emit(value);
       return;
     }

@@ -22,14 +22,14 @@ export function CustomTooltip({ active, payload, totalValue, currency }: CustomT
   const percent = totalValue > 0 ? ((value / totalValue) * 100).toFixed(2) : '0.00';
 
   return (
-    <div className="bg-white px-4 py-3 rounded-xl shadow-lg border border-slate-100">
-      <p className="text-xs font-semibold uppercase tracking-widest text-slate-800 mb-1">
+    <div className="bg-white px-4 py-3 rounded-xl shadow-lg border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
+      <p className="text-xs font-semibold uppercase tracking-widest text-slate-800 mb-1 dark:text-slate-200">
         {payload[0].name}
       </p>
-      <p className="text-sm font-semibold text-slate-800 tabular-nums">
+      <p className="text-sm font-semibold text-slate-800 tabular-nums dark:text-slate-200">
         {isPrivate ? '***' : formatCurrency(value, currency)}
       </p>
-      <p className="text-xs text-slate-500 mt-0.5">{percent}% de la cartera</p>
+      <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">{percent}% de la cartera</p>
     </div>
   );
 }

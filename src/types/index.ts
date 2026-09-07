@@ -1,4 +1,6 @@
 export interface RawOrder {
+  /** Clave estable para deduplicar cuando se suben varios exports solapados. */
+  id: string;
   Especie: string;
   'Num Boleto': string | number;
   Ticker: string;
@@ -77,4 +79,50 @@ export interface PortfolioStats {
   lastDate: string | null;
   daysActive: number;
   mostTradedTicker: string | null;
+  cash: CashBalance;
+  cashMovements: CashMovement[];
+  /** Tasa anualizada (0,15 = 15%). `null` cuando no hay aportes fechados. */
+  xirr: number | null;
+  fiscalYears: FiscalYearResult[];
+}
+
+export type CashKind = 'deposit' | 'withdrawal' | 'dividend' | 'other';
+
+/** Movimiento de dinero que no es compra ni venta de un activo. */
+export interface CashMovement {
+  id: string;
+  date: string;
+  kind: CashKind;
+  description: string;
+  currency: 'ARS' | 'USD';
+  /** Firmado y en su propia moneda: positivo entra, negativo sale. */
+  amount: number;
+}
+
+export interface ParsedFile {
+  orders: RawOrder[];
+  cash: CashMovement[];
+}
+
+export interface CashBalance {
+  ars: number;
+  usd: number;
+  totalUSD: number;
+  depositsUSD: number;
+  withdrawalsUSD: number;
+  dividendsUSD: number;
+}
+
+export interface FiscalYearResult {
+  year: number;
+  realizedUSD: number;
+  trades: number;
+  costsUSD: number;
+}
+
+export interface BenchmarkPoint {
+  timestamp: number;
+  portfolioUSD: number;
+  spyUSD?: number;
+  mepUSD?: number;
 }

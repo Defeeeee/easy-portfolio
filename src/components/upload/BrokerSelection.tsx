@@ -9,7 +9,7 @@ interface BrokerSelectionProps {
 export function BrokerSelection({ selectedBroker, onSelectBroker }: BrokerSelectionProps) {
   return (
     <div className="w-full max-w-xl flex flex-col items-center gap-4 pt-8">
-      <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">
+      <p className="text-xs text-slate-400 font-medium uppercase tracking-wider dark:text-slate-500">
         Seleccioná tu broker
       </p>
       <div className="flex flex-wrap justify-center items-center gap-5">

@@ -42,8 +42,10 @@ export function AssetTypeDistribution({
         unknownPositions.length > 0 ? (
           <div className="flex items-start gap-2">
             <Info size={14} className="text-amber-500 mt-0.5 shrink-0" />
-            <p className="text-xs text-slate-500 leading-relaxed">
-              <span className="font-semibold text-slate-700">Sin clasificar: </span>
+            <p className="text-xs text-slate-500 leading-relaxed dark:text-slate-400">
+              <span className="font-semibold text-slate-700 dark:text-slate-200">
+                Sin clasificar:{' '}
+              </span>
               {unknownPositions.map((p) => p.ticker).join(', ')}
             </p>
           </div>

@@ -38,3 +38,45 @@ export async function fetchCurrentPrices(
     return {};
   }
 }
+
+export interface HistoryPointDTO {
+  date: string;
+  close: number;
+}
+
+export interface HistorySeriesDTO {
+  currency: string;
+  points: HistoryPointDTO[];
+}
+
+export async function fetchPriceHistory(
+  tickers: string[],
+  from?: string
+): Promise<Record<string, HistorySeriesDTO>> {
+  if (!tickers || tickers.length === 0) return {};
+
+  try {
+    const response = await fetch('/api/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tickers, from }),
+    });
+    if (!response.ok) throw new Error(`Error fetching history: ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error('Error in fetchPriceHistory:', error);
+    return {};
+  }
+}
+
+export async function fetchMepSeries(): Promise<{ date: string; value: number }[]> {
+  try {
+    const response = await fetch('/api/mep');
+    if (!response.ok) throw new Error(`Error fetching MEP series: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data.points) ? data.points : [];
+  } catch (error) {
+    console.error('Error in fetchMepSeries:', error);
+    return [];
+  }
+}

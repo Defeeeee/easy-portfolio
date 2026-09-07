@@ -67,16 +67,18 @@ export function StatsStrip({ stats, arsToUsdRate, currency, openPositions }: Sta
   }, [stats, multiplier, currency, openPositions]);
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 divide-y divide-x divide-slate-100 overflow-hidden">
+    <div className="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 divide-y divide-x divide-slate-100 overflow-hidden dark:bg-slate-900 dark:border-slate-800 dark:divide-slate-800">
       {metrics.map((metric) => (
         <div key={metric.label} className="px-5 py-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
             {metric.label}
           </p>
-          <p className="text-lg font-bold tracking-tight text-slate-900 mt-1 tabular-nums">
+          <p className="text-lg font-bold tracking-tight text-slate-900 mt-1 tabular-nums dark:text-slate-100">
             {metric.private && isPrivate ? '***' : metric.value}
           </p>
-          {metric.hint && <p className="text-[11px] text-slate-400 mt-0.5">{metric.hint}</p>}
+          {metric.hint && (
+            <p className="text-[11px] text-slate-400 mt-0.5 dark:text-slate-500">{metric.hint}</p>
+          )}
         </div>
       ))}
     </div>

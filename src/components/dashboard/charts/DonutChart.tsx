@@ -35,7 +35,11 @@ export function DonutChart({ data, currency, centerLabel = 'Total' }: DonutChart
   const total = useMemo(() => slices.reduce((sum, s) => sum + s.value, 0), [slices]);
 
   if (slices.length === 0) {
-    return <p className="text-sm text-slate-400 py-16 text-center">Sin datos para graficar.</p>;
+    return (
+      <p className="text-sm text-slate-400 py-16 text-center dark:text-slate-500">
+        Sin datos para graficar.
+      </p>
+    );
   }
 
   return (
@@ -63,10 +67,10 @@ export function DonutChart({ data, currency, centerLabel = 'Total' }: DonutChart
           </ResponsiveContainer>
         )}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-[10px] uppercase tracking-[0.12em] text-slate-400">
+          <span className="text-[10px] uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
             {centerLabel}
           </span>
-          <span className="text-base font-bold text-slate-800 tabular-nums">
+          <span className="text-base font-bold text-slate-800 tabular-nums dark:text-slate-200">
             {isPrivate ? '***' : formatCompact(total, currency)}
           </span>
         </div>
@@ -79,8 +83,8 @@ export function DonutChart({ data, currency, centerLabel = 'Total' }: DonutChart
               className="w-2.5 h-2.5 rounded-full shrink-0"
               style={{ backgroundColor: slice.fill }}
             />
-            <span className="text-slate-600 truncate flex-1">{slice.name}</span>
-            <span className="text-slate-400 tabular-nums shrink-0">
+            <span className="text-slate-600 truncate flex-1 dark:text-slate-300">{slice.name}</span>
+            <span className="text-slate-400 tabular-nums shrink-0 dark:text-slate-500">
               {total > 0 ? ((slice.value / total) * 100).toFixed(1) : '0.0'}%
             </span>
           </li>

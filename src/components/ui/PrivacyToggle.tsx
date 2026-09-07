@@ -8,7 +8,9 @@ export function PrivacyToggle() {
     <button
       onClick={togglePrivacy}
       className={`cursor-pointer flex items-center justify-center w-10 h-10 rounded-md transition-colors ${
-        isPrivate ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
+        isPrivate
+          ? 'text-slate-900 dark:text-slate-100'
+          : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300'
       }`}
     >
       {isPrivate ? <EyeOff size={18} /> : <Eye size={18} />}

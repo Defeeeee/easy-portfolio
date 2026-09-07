@@ -8,11 +8,15 @@ export default function NotFound() {
         <AlertCircle size={56} className="text-red-500" />
       </div>
 
-      <h1 className="text-8xl font-black text-slate-900 tracking-tighter mb-4">404</h1>
+      <h1 className="text-8xl font-black text-slate-900 tracking-tighter mb-4 dark:text-slate-100">
+        404
+      </h1>
 
-      <h2 className="text-3xl font-bold text-slate-800 mb-4">Página no encontrada</h2>
+      <h2 className="text-3xl font-bold text-slate-800 mb-4 dark:text-slate-200">
+        Página no encontrada
+      </h2>
 
-      <p className="text-slate-500 text-lg max-w-md mb-10 leading-relaxed">
+      <p className="text-slate-500 text-lg max-w-md mb-10 leading-relaxed dark:text-slate-400">
         La ruta que estás intentando acceder no existe o ha sido movida temporalmente.
       </p>
 

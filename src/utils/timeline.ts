@@ -108,7 +108,13 @@ export function buildTimeline({
   let previousValue = 0;
 
   for (let t = start; t <= today; t += DAY) {
+    // `investedDelta` mide el costo (para la línea de capital invertido) y
+    // `marketFlow` el dinero que realmente entró o salió ese día. En una venta
+    // con ganancia no son lo mismo, y el rendimiento hay que medirlo contra lo
+    // segundo: si no, cada venta rentable se descuenta de menos y el índice se
+    // hunde de a poco.
     let investedDelta = 0;
+    let marketFlow = 0;
 
     while (index < sorted.length) {
       const order = sorted[index];
@@ -123,6 +129,7 @@ export function buildTimeline({
         costBasis.set(order.Ticker, (costBasis.get(order.Ticker) ?? 0) + netoUSD);
         cumulativeInvestedUSD += netoUSD;
         investedDelta += netoUSD;
+        marketFlow += netoUSD;
       } else if (order.Tipo === 'VENTA') {
         const avg = qty > QTY_EPSILON ? (costBasis.get(order.Ticker) ?? 0) / qty : 0;
         const soldCost = order.Cantidad * avg;
@@ -130,6 +137,7 @@ export function buildTimeline({
         costBasis.set(order.Ticker, (costBasis.get(order.Ticker) ?? 0) - soldCost);
         cumulativeInvestedUSD -= soldCost;
         investedDelta -= soldCost;
+        marketFlow -= netoUSD;
 
         if (Math.abs(holdings.get(order.Ticker) ?? 0) < QTY_EPSILON) {
           holdings.set(order.Ticker, 0);
@@ -140,11 +148,11 @@ export function buildTimeline({
       index += 1;
     }
 
-    // El benchmark recibe los mismos aportes netos, en las mismas fechas.
-    if (benchmark && investedDelta !== 0) {
+    // El benchmark recibe los mismos flujos de dinero, en las mismas fechas.
+    if (benchmark && marketFlow !== 0) {
       const benchPrice = priceUsdAt(benchmark, t, fx);
       if (benchPrice && benchPrice > 0) {
-        benchmarkUnits = Math.max(0, benchmarkUnits + investedDelta / benchPrice);
+        benchmarkUnits = Math.max(0, benchmarkUnits + marketFlow / benchPrice);
       }
     }
 
@@ -155,14 +163,14 @@ export function buildTimeline({
       const price =
         marketPrice ??
         (t >= today ? currentPrices.get(ticker) : undefined) ??
-        anchors.get(ticker)?.at(t);
+        anchors.get(ticker)?.interpolatedAt(t);
       if (price !== undefined) actualValueUSD += qty * price;
     });
 
     // El rendimiento del día se mide sobre el valor previo, descontando lo que
     // entró o salió por operaciones de ese mismo día.
     if (previousValue > 0) {
-      const growth = (actualValueUSD - investedDelta) / previousValue;
+      const growth = (actualValueUSD - marketFlow) / previousValue;
       if (Number.isFinite(growth) && growth > 0) twrIndex *= growth;
     }
     previousValue = actualValueUSD;
@@ -194,6 +202,20 @@ export function buildTimeline({
   }
 
   return points;
+}
+
+/**
+ * Serie constante en dólares. Sirve para el benchmark "comprar dólares y no
+ * hacer nada": en USD su precio no cambia nunca, lo que cambia es todo lo demás.
+ */
+export function flatUsdHistory(): PriceHistory {
+  return {
+    currency: 'USD',
+    series: new TimeSeries([
+      { t: new Date(2000, 0, 1).getTime(), v: 1 },
+      { t: Date.now() + 365 * 24 * 60 * 60 * 1000, v: 1 },
+    ]),
+  };
 }
 
 export function historyFromPoints(

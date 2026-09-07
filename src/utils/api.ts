@@ -80,3 +80,34 @@ export async function fetchMepSeries(): Promise<{ date: string; value: number }[
     return [];
   }
 }
+
+export interface FundQuoteDTO {
+  fondo: string;
+  fecha: string;
+  vcp: number;
+  categoria: string;
+}
+
+export async function fetchFundQuotes(): Promise<FundQuoteDTO[]> {
+  try {
+    const response = await fetch('/api/fci');
+    if (!response.ok) throw new Error(`Error fetching FCI: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data.funds) ? data.funds : [];
+  } catch (error) {
+    console.error('Error in fetchFundQuotes:', error);
+    return [];
+  }
+}
+
+export async function fetchInflation(): Promise<{ date: string; monthly: number }[]> {
+  try {
+    const response = await fetch('/api/inflation');
+    if (!response.ok) throw new Error(`Error fetching inflation: ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data.points) ? data.points : [];
+  } catch (error) {
+    console.error('Error in fetchInflation:', error);
+    return [];
+  }
+}

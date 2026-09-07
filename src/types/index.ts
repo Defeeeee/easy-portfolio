@@ -14,25 +14,37 @@ export interface RawOrder {
   Arancel: number | string;
   Neto: number | string;
   Moneda: string;
+  /**
+   * Cuántas unidades cotiza la columna `precio` del broker: 1 para acciones y
+   * CEDEARs, 1.000 para los FCI y 100 para las ONs. Permite traducir el VCP que
+   * publican las fuentes externas a precio por unidad.
+   */
+  priceScale?: number;
 }
 
 /** De dónde salió el precio con el que se valúa una posición. */
-export type PriceSource = 'market' | 'last-trade';
+export type PriceSource = 'market' | 'fund-nav' | 'last-trade';
 
 export interface Position {
   ticker: string;
   especie: string;
   assetType: string;
+  /** Moneda en la que se operó la especie; define cómo valuarla. */
+  currency: 'ARS' | 'USD';
   quantity: number;
   averagePrice: number; // in USD
   investedValueUSD: number;
+  /** Unidades que cotiza el precio del broker (1 / 100 / 1.000). */
+  priceScale?: number;
   currentPriceUSD?: number;
   currentValueUSD?: number;
   pnlAbsolute?: number;
   pnlPercentage?: number;
   priceSource?: PriceSource;
-  /** Fecha del precio cuando proviene de la última operación del archivo. */
+  /** Fecha del precio cuando no proviene del mercado en vivo. */
   priceDate?: string;
+  /** Nombre del fondo que se usó para valuar, cuando el precio es un VCP. */
+  fundName?: string;
 }
 
 /** Una compra cerrada contra una venta posterior (costo promedio ponderado). */

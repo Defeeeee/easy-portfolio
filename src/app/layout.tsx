@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { ServiceWorker } from '@/components/ui/ServiceWorker';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -45,6 +46,15 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  manifest: '/manifest.webmanifest',
+  appleWebApp: { capable: true, title: 'Easy Portfolio', statusBarStyle: 'default' },
+};
+
+export const viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f5f7fa' },
+    { media: '(prefers-color-scheme: dark)', color: '#0b1120' },
+  ],
 };
 
 export default function RootLayout({
@@ -56,6 +66,7 @@ export default function RootLayout({
     <html lang="es" className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <ThemeProvider>{children}</ThemeProvider>
+        <ServiceWorker />
       </body>
       <Script
         src="https://www.googletagmanager.com/gtag/js?id=G-LG8199G5QE"

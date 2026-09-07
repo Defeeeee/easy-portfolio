@@ -2,15 +2,24 @@ import { ChevronLeft } from 'lucide-react';
 import { CurrencyToggle } from '@/components/ui/CurrencyToggle';
 import { PrivacyToggle } from '@/components/ui/PrivacyToggle';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { ShareButton } from '@/components/ui/ShareButton';
 
 interface NavBarProps {
   arsToUsdRate: number;
   onReset: () => void;
   currency: 'USD' | 'ARS';
   onCurrencyChange: (currency: 'USD' | 'ARS') => void;
+  /** Elemento a capturar cuando se descarga la imagen del dashboard. */
+  captureTargetId?: string;
 }
 
-export function NavBar({ arsToUsdRate, onReset, currency, onCurrencyChange }: NavBarProps) {
+export function NavBar({
+  arsToUsdRate,
+  onReset,
+  currency,
+  onCurrencyChange,
+  captureTargetId,
+}: NavBarProps) {
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-4 dark:border-slate-800">
       <div className="flex items-center justify-between w-full md:block md:w-auto">
@@ -27,19 +36,25 @@ export function NavBar({ arsToUsdRate, onReset, currency, onCurrencyChange }: Na
           )}
         </p>
       </div>
-      <div className="flex justify-between md:justify-end w-full md:w-auto gap-2">
+      <div
+        className="flex flex-wrap items-center justify-between md:justify-end w-full md:w-auto gap-1 md:gap-2"
+        data-exclude-from-capture="true"
+      >
         <PrivacyToggle />
 
         <ThemeToggle />
+
+        {captureTargetId && <ShareButton targetId={captureTargetId} />}
 
         <CurrencyToggle currency={currency} onChange={onCurrencyChange} disabled={!arsToUsdRate} />
 
         <button
           onClick={onReset}
-          className="cursor-pointer flex items-center gap-2 px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors font-medium text-sm dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-slate-100"
+          title="Subir otro archivo"
+          className="cursor-pointer flex items-center gap-2 px-2.5 md:px-4 py-2.5 rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors font-medium text-sm dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-slate-100"
         >
           <ChevronLeft size={15} />
-          Subir otro archivo
+          <span className="hidden sm:inline">Subir otro archivo</span>
         </button>
       </div>
     </div>

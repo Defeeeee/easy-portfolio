@@ -28,14 +28,8 @@ export class TimeSeries {
     return this.points[this.points.length - 1];
   }
 
-  /** Último valor con fecha <= timestamp. Antes del inicio devuelve el primero. */
-  at(timestamp: number): number | undefined {
-    if (this.points.length === 0) return undefined;
-    if (timestamp <= this.points[0].t) return this.points[0].v;
-    if (timestamp >= this.points[this.points.length - 1].t) {
-      return this.points[this.points.length - 1].v;
-    }
-
+  /** Índice del último punto con fecha <= timestamp. */
+  private indexAt(timestamp: number): number {
     let lo = 0;
     let hi = this.points.length - 1;
     while (lo < hi) {
@@ -43,7 +37,35 @@ export class TimeSeries {
       if (this.points[mid].t <= timestamp) lo = mid;
       else hi = mid - 1;
     }
-    return this.points[lo].v;
+    return lo;
+  }
+
+  /**
+   * Valor interpolado linealmente entre los dos puntos que rodean la fecha.
+   * Para una serie que devenga todos los días (un money market, por ejemplo)
+   * la recta se acerca mucho más que el escalón de `at`.
+   */
+  interpolatedAt(timestamp: number): number | undefined {
+    if (this.points.length === 0) return undefined;
+    if (timestamp <= this.points[0].t) return this.points[0].v;
+    const last = this.points[this.points.length - 1];
+    if (timestamp >= last.t) return last.v;
+
+    const i = this.indexAt(timestamp);
+    const a = this.points[i];
+    const b = this.points[i + 1];
+    if (!b || b.t === a.t) return a.v;
+    return a.v + ((timestamp - a.t) / (b.t - a.t)) * (b.v - a.v);
+  }
+
+  /** Último valor con fecha <= timestamp. Antes del inicio devuelve el primero. */
+  at(timestamp: number): number | undefined {
+    if (this.points.length === 0) return undefined;
+    if (timestamp <= this.points[0].t) return this.points[0].v;
+    if (timestamp >= this.points[this.points.length - 1].t) {
+      return this.points[this.points.length - 1].v;
+    }
+    return this.points[this.indexAt(timestamp)].v;
   }
 }
 

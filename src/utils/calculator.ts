@@ -41,6 +41,8 @@ interface Lot {
   quantity: number;
   totalCostUSD: number;
   especie: string;
+  currency: 'ARS' | 'USD';
+  priceScale: number;
 }
 
 /**
@@ -58,8 +60,12 @@ function walkOrders(orders: RawOrder[], fx: FxRates) {
       quantity: 0,
       totalCostUSD: 0,
       especie: order.Especie || '',
+      currency: isUsdOrder(order) ? ('USD' as const) : ('ARS' as const),
+      priceScale: order.priceScale ?? 1,
     };
     if (!lot.especie && order.Especie) lot.especie = order.Especie;
+    lot.currency = isUsdOrder(order) ? 'USD' : 'ARS';
+    if (order.priceScale) lot.priceScale = order.priceScale;
 
     if (order.Tipo === 'COMPRA') {
       lot.quantity += order.Cantidad;
@@ -111,9 +117,11 @@ export function calculatePositions(orders: RawOrder[], fx: FxRates): Position[] 
         ticker,
         especie: lot.especie,
         assetType: getAssetType(lot.especie, ticker),
+        currency: lot.currency,
         quantity: lot.quantity,
         averagePrice: lot.totalCostUSD / lot.quantity,
         investedValueUSD: lot.totalCostUSD,
+        priceScale: lot.priceScale,
       });
     }
   });
@@ -144,23 +152,37 @@ export function lastTradedPrices(
 }
 
 /** Aplica precios de mercado y, donde no haya, el último precio operado. */
+export interface FundPrice {
+  priceUSD: number;
+  fondo: string;
+  fecha: string;
+}
+
 export function enrichPositions(
   positions: Position[],
   quotes: Record<string, { price: number; currency: string }>,
   fallbacks: Map<string, { priceUSD: number; date: string }>,
-  spotArsToUsd: number
+  spotArsToUsd: number,
+  fundPrices: Map<string, FundPrice> = new Map()
 ): Position[] {
   return positions.map((pos) => {
     const quote = quotes[pos.ticker];
+    const fund = fundPrices.get(pos.ticker);
     let currentPriceUSD: number | undefined;
     let priceSource: PriceSource | undefined;
     let priceDate: string | undefined;
+    let fundName: string | undefined;
 
     if (quote && quote.price > 0) {
       // El precio de mercado es de hoy, así que acá sí corresponde el spot.
       currentPriceUSD =
         quote.currency === 'ARS' && spotArsToUsd > 0 ? quote.price / spotArsToUsd : quote.price;
       priceSource = 'market';
+    } else if (fund && fund.priceUSD > 0) {
+      currentPriceUSD = fund.priceUSD;
+      priceSource = 'fund-nav';
+      priceDate = fund.fecha;
+      fundName = fund.fondo;
     } else {
       const fallback = fallbacks.get(pos.ticker);
       if (fallback && fallback.priceUSD > 0) {
@@ -183,6 +205,7 @@ export function enrichPositions(
       pnlPercentage: pos.investedValueUSD > 0 ? (pnlAbsolute / pos.investedValueUSD) * 100 : 0,
       priceSource,
       priceDate,
+      fundName,
     };
   });
 }

@@ -38,8 +38,8 @@ export default function Home() {
     try {
       setIsLoading(true);
 
-      const { orders, cash, duplicates } = await parseFiles(files, broker);
-      const built = await buildPortfolio(orders, cash, duplicates);
+      const { orders, cash, duplicates, brokers } = await parseFiles(files, broker);
+      const built = await buildPortfolio(orders, cash, duplicates, brokers);
 
       saveSession({ broker, orders, cash, fileNames: files.map((f) => f.name) });
       setModel(built);

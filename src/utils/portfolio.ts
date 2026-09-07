@@ -1,60 +1,113 @@
 import { BrokerType } from '@/constants/brokers';
+import { BENCHMARKS } from '@/constants/benchmarks';
 import { CashMovement, ParsedFile, PortfolioStats, Position, RawOrder } from '../types';
-import { fetchCurrentPrices, fetchDolarRate, fetchMepSeries, fetchPriceHistory } from './api';
-import { calculatePositions, enrichPositions, lastTradedPrices } from './calculator';
-import { FxRates } from './fx';
 import {
-  parseBalanz,
-  parseBullMarket,
-  parseCocos,
-  mergeParsedFiles,
-  parseOrderDate,
-} from './parser';
+  fetchCurrentPrices,
+  fetchDolarRate,
+  fetchFundQuotes,
+  fetchInflation,
+  fetchMepSeries,
+  fetchPriceHistory,
+} from './api';
+import { FundPrice, calculatePositions, enrichPositions, lastTradedPrices } from './calculator';
+import { detectBroker } from './brokerDetect';
+import { matchFund } from './fciMatch';
+import { FxRates } from './fx';
+import { mergeParsedFiles, parseBalanz, parseCocos, parseOrderDate } from './parser';
 import { calculateStats } from './stats';
-import { PriceHistory, TimelinePoint, buildTimeline, historyFromPoints } from './timeline';
+import { PriceHistory, flatUsdHistory, historyFromPoints } from './timeline';
 
-/** CEDEAR del S&P 500 en BYMA: cotiza en pesos y tiene serie diaria en Yahoo. */
-export const BENCHMARK_TICKER = 'SPY.BA';
-export const BENCHMARK_LABEL = 'S&P 500';
+export interface InflationPoint {
+  date: string;
+  monthly: number;
+}
 
 export interface PortfolioModel {
   orders: RawOrder[];
   cash: CashMovement[];
   positions: Position[];
   stats: PortfolioStats;
-  timeline: TimelinePoint[];
+  fx: FxRates;
+  history: Map<string, PriceHistory>;
+  benchmarks: Map<string, PriceHistory>;
+  inflation: InflationPoint[];
   arsToUsdRate: number;
   hasFxHistory: boolean;
   estimatedTickers: string[];
   duplicatesSkipped: number;
+  brokersDetected: BrokerType[];
 }
 
+const PARSERS: Record<BrokerType, (file: File) => Promise<ParsedFile>> = {
+  cocos: parseCocos,
+  balanz: parseBalanz,
+};
+
+/**
+ * Parsea cada archivo con el parser que le corresponde, deduciendo el broker de
+ * su cabecera. Permite mezclar exports de brokers distintos en una sola cartera.
+ */
 export async function parseFiles(
   files: File[],
-  broker: BrokerType
-): Promise<ParsedFile & { duplicates: number }> {
-  const parser =
-    broker === 'cocos' ? parseCocos : broker === 'balanz' ? parseBalanz : parseBullMarket;
-  const parsed = await Promise.all(files.map((file) => parser(file)));
-  return mergeParsedFiles(parsed);
+  fallbackBroker: BrokerType
+): Promise<ParsedFile & { duplicates: number; brokers: BrokerType[] }> {
+  const brokers: BrokerType[] = [];
+
+  const parsed = await Promise.all(
+    files.map(async (file) => {
+      const broker = (await detectBroker(file)) ?? fallbackBroker;
+      if (!brokers.includes(broker)) brokers.push(broker);
+      return PARSERS[broker](file);
+    })
+  );
+
+  return { ...mergeParsedFiles(parsed), brokers };
 }
 
 function isoDay(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-/**
- * Arma el modelo completo a partir de las órdenes ya parseadas: cotización
- * histórica del dólar, precios de mercado, series diarias y benchmark.
- */
+/** Traduce el VCP publicado de cada fondo a precio por unidad, en dólares. */
+function fundPricesFor(
+  positions: Position[],
+  funds: Awaited<ReturnType<typeof fetchFundQuotes>>,
+  spotRate: number
+): Map<string, FundPrice> {
+  const result = new Map<string, FundPrice>();
+  if (funds.length === 0) return result;
+
+  for (const position of positions) {
+    if (position.assetType !== 'Fondo Común') continue;
+
+    const match = matchFund(position.especie, funds);
+    if (!match) continue;
+
+    // El VCP viene en la misma unidad que la columna de precio del broker.
+    const unitPrice = match.vcp / (position.priceScale ?? 1);
+    const priceUSD = position.currency === 'USD' ? unitPrice : unitPrice / spotRate;
+    if (priceUSD > 0) {
+      result.set(position.ticker, { priceUSD, fondo: match.fondo, fecha: match.fecha });
+    }
+  }
+
+  return result;
+}
+
 export async function buildPortfolio(
   orders: RawOrder[],
   cash: CashMovement[],
-  duplicatesSkipped = 0
+  duplicatesSkipped = 0,
+  brokersDetected: BrokerType[] = []
 ): Promise<PortfolioModel> {
-  const [spotRate, mepPoints] = await Promise.all([fetchDolarRate(), fetchMepSeries()]);
-  const fx = new FxRates(mepPoints, spotRate);
+  const [spotRate, mepPoints, funds, inflation] = await Promise.all([
+    fetchDolarRate(),
+    fetchMepSeries(),
+    fetchFundQuotes(),
+    fetchInflation(),
+  ]);
 
+  const fx = new FxRates(mepPoints, spotRate);
   const positions = calculatePositions(orders, fx);
   const tickers = positions.map((p) => p.ticker);
 
@@ -63,24 +116,36 @@ export async function buildPortfolio(
     return !earliest || d < earliest ? d : earliest;
   }, null);
 
+  const benchmarkTickers = BENCHMARKS.map((b) => b.ticker).filter((t): t is string => t !== null);
+
   const [quotes, historyRaw] = await Promise.all([
     fetchCurrentPrices(tickers),
-    fetchPriceHistory([...tickers, BENCHMARK_TICKER], firstDate ? isoDay(firstDate) : undefined),
+    fetchPriceHistory([...tickers, ...benchmarkTickers], firstDate ? isoDay(firstDate) : undefined),
   ]);
 
-  const enriched = enrichPositions(positions, quotes, lastTradedPrices(orders, fx), spotRate);
+  const enriched = enrichPositions(
+    positions,
+    quotes,
+    lastTradedPrices(orders, fx),
+    spotRate,
+    fundPricesFor(positions, funds, spotRate)
+  );
 
   const history = new Map<string, PriceHistory>();
   for (const [ticker, series] of Object.entries(historyRaw)) {
-    if (ticker === BENCHMARK_TICKER) continue;
+    if (benchmarkTickers.includes(ticker)) continue;
     history.set(ticker, historyFromPoints(series.currency, series.points));
   }
-  const benchmarkRaw = historyRaw[BENCHMARK_TICKER];
-  const benchmark = benchmarkRaw
-    ? historyFromPoints(benchmarkRaw.currency, benchmarkRaw.points)
-    : undefined;
 
-  const timeline = buildTimeline({ orders, positions: enriched, fx, history, benchmark });
+  const benchmarks = new Map<string, PriceHistory>();
+  for (const option of BENCHMARKS) {
+    if (option.ticker === null) {
+      benchmarks.set(option.key, flatUsdHistory());
+      continue;
+    }
+    const raw = historyRaw[option.ticker];
+    if (raw) benchmarks.set(option.key, historyFromPoints(raw.currency, raw.points));
+  }
 
   const currentValueUSD = enriched.reduce(
     (sum, p) => sum + (p.currentValueUSD ?? p.investedValueUSD),
@@ -92,10 +157,14 @@ export async function buildPortfolio(
     cash,
     positions: enriched,
     stats: calculateStats(orders, cash, fx, currentValueUSD),
-    timeline,
+    fx,
+    history,
+    benchmarks,
+    inflation,
     arsToUsdRate: spotRate,
     hasFxHistory: fx.hasHistory,
-    estimatedTickers: enriched.filter((p) => !history.has(p.ticker)).map((p) => p.ticker),
+    estimatedTickers: enriched.filter((p) => p.priceSource === 'last-trade').map((p) => p.ticker),
     duplicatesSkipped,
+    brokersDetected,
   };
 }

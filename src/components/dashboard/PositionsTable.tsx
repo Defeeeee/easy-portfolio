@@ -36,6 +36,7 @@ interface PositionsTableProps {
   positions: Position[];
   arsToUsdRate: number;
   currency: 'USD' | 'ARS';
+  onSelect?: (position: Position) => void;
 }
 
 interface RowProps {
@@ -43,6 +44,7 @@ interface RowProps {
   currency: 'USD' | 'ARS';
   multiplier: number;
   weight: number;
+  onSelect?: (position: Position) => void;
 }
 
 function ValueCell({
@@ -61,7 +63,7 @@ function ValueCell({
   );
 }
 
-function SortableRow({ pos, currency, multiplier, weight }: RowProps) {
+function SortableRow({ pos, currency, multiplier, weight, onSelect }: RowProps) {
   const { isPrivate } = usePrivacy();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: pos.ticker,
@@ -98,9 +100,13 @@ function SortableRow({ pos, currency, multiplier, weight }: RowProps) {
       </td>
 
       <td className="col-span-1 order-1 flex flex-col justify-center md:table-cell md:px-5 md:py-4 md:text-left">
-        <span className="font-bold text-base text-slate-800 tracking-tight md:text-sm md:font-semibold dark:text-slate-200">
+        <button
+          onClick={() => onSelect?.(pos)}
+          title={`Ver detalle de ${pos.ticker}`}
+          className="font-bold text-base text-slate-800 tracking-tight text-left md:text-sm md:font-semibold dark:text-slate-200 hover:text-emerald-600 hover:underline cursor-pointer transition-colors dark:hover:text-emerald-400"
+        >
           {pos.ticker}
-        </span>
+        </button>
         <span className="text-[11px] text-slate-400 md:block dark:text-slate-500">
           {pos.assetType}
         </span>
@@ -187,7 +193,12 @@ function SortableRow({ pos, currency, multiplier, weight }: RowProps) {
   );
 }
 
-export function PositionsTable({ positions, arsToUsdRate, currency }: PositionsTableProps) {
+export function PositionsTable({
+  positions,
+  arsToUsdRate,
+  currency,
+  onSelect,
+}: PositionsTableProps) {
   const [localPositions, setLocalPositions] = useState<Position[]>([]);
 
   useEffect(() => {
@@ -219,6 +230,11 @@ export function PositionsTable({ positions, arsToUsdRate, currency }: PositionsT
 
   const estimatedPositions = useMemo(
     () => localPositions.filter((p) => p.priceSource === 'last-trade'),
+    [localPositions]
+  );
+
+  const fundPriced = useMemo(
+    () => localPositions.filter((p) => p.priceSource === 'fund-nav'),
     [localPositions]
   );
 
@@ -292,6 +308,7 @@ export function PositionsTable({ positions, arsToUsdRate, currency }: PositionsT
                         ? ((pos.currentValueUSD ?? pos.investedValueUSD) / totalValueUSD) * 100
                         : 0
                     }
+                    onSelect={onSelect}
                   />
                 ))}
               </SortableContext>
@@ -300,17 +317,36 @@ export function PositionsTable({ positions, arsToUsdRate, currency }: PositionsT
         </div>
       </DndContext>
 
-      {estimatedPositions.length > 0 && (
-        <footer className="px-6 py-3 border-t border-slate-100 flex items-start gap-2 dark:border-slate-800">
-          <Info size={14} className="text-amber-500 mt-0.5 shrink-0" />
-          <p className="text-xs text-slate-500 leading-relaxed dark:text-slate-400">
-            <span className="text-amber-500 font-semibold">*</span> Sin cotización de mercado; se
-            valúa con el último precio operado en el archivo:{' '}
-            {estimatedPositions
-              .map((p) => `${p.ticker}${p.priceDate ? ` (${formatDate(p.priceDate)})` : ''}`)
-              .join(', ')}
-            .
-          </p>
+      {(fundPriced.length > 0 || estimatedPositions.length > 0) && (
+        <footer className="px-6 py-3 border-t border-slate-100 space-y-1.5 dark:border-slate-800">
+          {fundPriced.length > 0 && (
+            <p className="flex items-start gap-2 text-xs text-slate-500 leading-relaxed dark:text-slate-400">
+              <Info size={14} className="text-slate-400 mt-0.5 shrink-0 dark:text-slate-500" />
+              <span>
+                Valuado con el valor de cuotaparte publicado del fondo:{' '}
+                {fundPriced
+                  .map(
+                    (p) =>
+                      `${p.ticker}${p.fundName ? ` — ${p.fundName}` : ''}${p.priceDate ? ` (${formatDate(p.priceDate)})` : ''}`
+                  )
+                  .join(', ')}
+                .
+              </span>
+            </p>
+          )}
+          {estimatedPositions.length > 0 && (
+            <p className="flex items-start gap-2 text-xs text-slate-500 leading-relaxed dark:text-slate-400">
+              <Info size={14} className="text-amber-500 mt-0.5 shrink-0" />
+              <span>
+                <span className="text-amber-500 font-semibold">*</span> Sin cotización de mercado;
+                se valúa con el último precio operado en el archivo:{' '}
+                {estimatedPositions
+                  .map((p) => `${p.ticker}${p.priceDate ? ` (${formatDate(p.priceDate)})` : ''}`)
+                  .join(', ')}
+                .
+              </span>
+            </p>
+          )}
         </footer>
       )}
     </section>

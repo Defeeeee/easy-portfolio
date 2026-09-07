@@ -1,15 +1,25 @@
 import * as XLSX from 'xlsx';
 import { CashKind, CashMovement, ParsedFile, RawOrder } from '../types';
 
+/**
+ * Las fechas de un boleto son días de calendario, no instantes. `new Date()`
+ * interpreta "2026-01-01" como medianoche UTC, que al sur del meridiano cae en
+ * el día anterior en hora local y desalinea las órdenes contra las series de
+ * precios. Por eso se arman siempre como fechas locales.
+ */
 export function parseOrderDate(dateVal: string): Date {
   if (!dateVal) return new Date();
 
   const dateStr = String(dateVal).trim();
 
-  const d = new Date(dateStr);
-  if (!isNaN(d.getTime())) return d;
+  const iso = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
 
-  return new Date();
+  const dmy = dateStr.match(/^(\d{2})-(\d{2})-(\d{4})/);
+  if (dmy) return new Date(Number(dmy[3]), Number(dmy[2]) - 1, Number(dmy[1]));
+
+  const parsed = new Date(dateStr);
+  return isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
 function parseNumber(value: number | string): number {
@@ -17,6 +27,12 @@ function parseNumber(value: number | string): number {
   if (!value) return 0;
   const stringVal = String(value).replace(/\./g, '').replace(/,/g, '.');
   return parseFloat(stringVal) || 0;
+}
+
+/** Redondea a la potencia de diez más cercana: 998 -> 1000, 1,02 -> 1. */
+function roundToPowerOfTen(value: number): number {
+  if (!Number.isFinite(value) || value <= 0) return 1;
+  return Math.pow(10, Math.round(Math.log10(value)));
 }
 
 function readFileAs(file: File, mode: 'text' | 'binary'): Promise<string> {
@@ -30,7 +46,11 @@ function readFileAs(file: File, mode: 'text' | 'binary'): Promise<string> {
 }
 
 export async function parseBalanz(file: File): Promise<ParsedFile> {
-  const data = await readFileAs(file, 'binary');
+  return parseBalanzBinary(await readFileAs(file, 'binary'));
+}
+
+/** Parseo puro del XLSX de Balanz, sin depender de `File`. */
+export function parseBalanzBinary(data: string): ParsedFile {
   const workbook = XLSX.read(data, { type: 'binary' });
   const sheetName = workbook.SheetNames[0];
   const sheet = workbook.Sheets[sheetName];
@@ -107,7 +127,11 @@ function cashKindOf(tipoOperacion: string): CashKind | null {
 }
 
 export async function parseCocos(file: File): Promise<ParsedFile> {
-  const text = await readFileAs(file, 'text');
+  return parseCocosText(await readFileAs(file, 'text'));
+}
+
+/** Parseo puro del CSV de Cocos, sin depender de `File`. */
+export function parseCocosText(text: string): ParsedFile {
   if (!text) return { orders: [], cash: [] };
 
   const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0);
@@ -180,6 +204,9 @@ export async function parseCocos(file: File): Promise<ParsedFile> {
     // `montoBruto` sí está en moneda real, así que derivamos el precio unitario.
     const precio = cantidad > 0 && bruto > 0 ? bruto / cantidad : Math.abs(rawPrecio);
     const neto = Math.abs(rawTotal) || bruto;
+    // 1 para CEDEARs, 1.000 para FCI, 100 para ONs. Se deduce en vez de
+    // hardcodearse porque depende del instrumento, no del tipo de operación.
+    const priceScale = precio > 0 ? roundToPowerOfTen(Math.abs(rawPrecio) / precio) : 1;
 
     if (cantidad <= 0) continue;
 
@@ -198,6 +225,7 @@ export async function parseCocos(file: File): Promise<ParsedFile> {
       Arancel: comision,
       Neto: neto,
       Moneda: isUSD ? 'Dólar' : 'Pesos',
+      priceScale,
     });
   }
 

@@ -4,6 +4,9 @@ import { limiter } from '@/utils/rateLimit';
 
 const yahooFinance = new YahooFinance();
 
+// Los índices llevan acento circunflejo (^MERV), no sólo letras y puntos.
+const TICKER_PATTERN = /^\^?[A-Z0-9.]{1,20}$/;
+
 const PRICE_CACHE = new Map<string, { price: number; currency: string; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 min
 
@@ -39,7 +42,7 @@ export async function POST(request: Request) {
     const sanitizedTickers = tickers
       .filter((t) => typeof t === 'string')
       .map((t) => t.trim().toUpperCase())
-      .filter((t) => /^[A-Z0-9.]+$/.test(t))
+      .filter((t) => TICKER_PATTERN.test(t))
       .slice(0, 100);
 
     const pricesMap: Record<string, { price: number; currency: string }> = {};
